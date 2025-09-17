@@ -8,6 +8,7 @@ using JLD2
 using Images
 using ColorTypes
 
+
 function fileNamesFolder(folderName::String, extension::String)    
     isdir(folderName) || error("The directory $folderName doesn't exist.");
     extension_upper = uppercase(extension);
@@ -15,6 +16,7 @@ function fileNamesFolder(folderName::String, extension::String)
     fileNamesNoExtension = replace.(fileNames, ".$extension" => "");
     return sort(fileNamesNoExtension);
 end;
+
 
 function loadDataset(datasetName::String, datasetFolder::String;
     datasetType::DataType=Float32)
@@ -38,6 +40,7 @@ function loadDataset(datasetName::String, datasetFolder::String;
     return (inputs, targets)
 end;
 
+
 function loadImage(imageName::String, datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
     fileName = "$imageName.tif"
@@ -50,6 +53,7 @@ function loadImage(imageName::String, datasetFolder::String;
     return image_matrix
 end;
 
+
 function convertImagesNCHW(imageVector::Vector{<:AbstractArray{<:Real,2}})
     imagesNCHW = Array{eltype(imageVector[1]), 4}(undef, length(imageVector), 1, size(imageVector[1],1), size(imageVector[1],2));
     for numImage in Base.OneTo(length(imageVector))
@@ -57,6 +61,7 @@ function convertImagesNCHW(imageVector::Vector{<:AbstractArray{<:Real,2}})
     end;
     return imagesNCHW;
 end;
+
 
 function loadImagesNCHW(datasetFolder::String;
     datasetType::DataType=Float32, resolution::Int=128)
@@ -66,9 +71,11 @@ function loadImagesNCHW(datasetFolder::String;
     return imagesNCHW
 end;
 
+
 showImage(image      ::AbstractArray{<:Real,2}                                      ) = display(Gray.(image));
 showImage(imagesNCHW ::AbstractArray{<:Real,4}                                      ) = display(Gray.(     hcat([imagesNCHW[ i,1,:,:] for i in 1:size(imagesNCHW ,1)]...)));
 showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Real,4}) = display(Gray.(vcat(hcat([imagesNCHW1[i,1,:,:] for i in 1:size(imagesNCHW1,1)]...), hcat([imagesNCHW2[i,1,:,:] for i in 1:size(imagesNCHW2,1)]...))));
+
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
     
@@ -87,6 +94,7 @@ function intervalDiscreteVector(data::AbstractArray{<:Real,1})
     return all(isInteger.(differences./minDifference, 1e-3)) ? minDifference : 0.
 end
 
+
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
     m = intervalDiscreteVector(data)
     min_value = minimum(data)
@@ -97,12 +105,23 @@ function cyclicalEncoding(data::AbstractArray{<:Real,1})
     return (sines, cosines)
 end;
 
-function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
-    #
-    # Codigo a desarrollar
-    #
-end;
 
+function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
+    data_file = joinpath(datasetFolder, "elec2_data.dat")
+    label_file = joinpath(datasetFolder, "elec2_label.dat")
+    isfile(data_file) || isfile(label_file) || return nothing
+    inputs = readdlm(data_file)
+    outputs = readdlm(label_file)
+    columns_to_keep = setdiff(1:size(inputs, 2), [1, 4])
+    inputs_reduced = inputs[:, columns_to_keep]
+    day_column = inputs_reduced[:, 1]
+    other_columns = inputs_reduced[:, 2:end]
+    sin_day, cos_day = cyclicalEncoding(day_column)
+    other_columns_converted = convert(Matrix{datasetType}, other_columns)
+    final_inputs = hcat(sin_day, cos_day, other_columns_converted)
+    final_outputs = vec(convert(Matrix{Bool}, outputs))
+    return (final_inputs, final_outputs)
+end;
 
 
 # ----------------------------------------------------------------------------------------------
