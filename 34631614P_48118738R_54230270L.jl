@@ -71,9 +71,7 @@ showImage(imagesNCHW ::AbstractArray{<:Real,4}                                  
 showImage(imagesNCHW1::AbstractArray{<:Real,4}, imagesNCHW2::AbstractArray{<:Real,4}) = display(Gray.(vcat(hcat([imagesNCHW1[i,1,:,:] for i in 1:size(imagesNCHW1,1)]...), hcat([imagesNCHW2[i,1,:,:] for i in 1:size(imagesNCHW2,1)]...))));
 
 function loadMNISTDataset(datasetFolder::String; labels::AbstractArray{Int,1}=0:9, datasetType::DataType=Float32)
-    #
-    # Codigo a desarrollar
-    #
+    
 end;
 
 
@@ -89,14 +87,15 @@ function intervalDiscreteVector(data::AbstractArray{<:Real,1})
     return all(isInteger.(differences./minDifference, 1e-3)) ? minDifference : 0.
 end
 
-
 function cyclicalEncoding(data::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    m = intervalDiscreteVector(data)
+    min_value = minimum(data)
+    max_value = maximum(data)
+    angles = 2*pi .*(data .- min_value) ./ (max_value - min_value + m)
+    sines = sin.(angles)
+    cosines = cos.(angles)
+    return (sines, cosines)
 end;
-
-
 
 function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
     #
