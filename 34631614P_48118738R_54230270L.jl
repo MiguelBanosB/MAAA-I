@@ -109,7 +109,9 @@ end;
 function loadStreamLearningDataset(datasetFolder::String; datasetType::DataType=Float32)
     data_file = joinpath(datasetFolder, "elec2_data.dat")
     label_file = joinpath(datasetFolder, "elec2_label.dat")
-    isfile(data_file) || isfile(label_file) || return nothing
+    if !(isfile(data_file) && isfile(label_file))
+    return nothing
+end
     inputs = readdlm(data_file)
     outputs = readdlm(label_file)
     columns_to_keep = setdiff(1:size(inputs, 2), [1, 4])
