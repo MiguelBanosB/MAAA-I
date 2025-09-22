@@ -13,7 +13,7 @@ println(VERSION)
 #  y la 1.11.3 de Random
 using Random; println(Random.VERSION)
 #  y la versión 0.14.25 de Flux
-import Pkg
+import Pkg  
 Pkg.status("Flux")
 
 # Es posible que con otras versiones los resultados sean distintos, estando las funciones bien, sobre todo en la funciones que implican alguna componente aleatoria
