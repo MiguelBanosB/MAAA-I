@@ -188,20 +188,55 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunction::Function=σ,
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
+    
+    X, Y = trainingDataset
+    X = permutedims(Float32.(X))
+    Y = permutedims(Y)
+
+    ann = newClassCascadeNetwork(size(X,1), size(Y,1))
+    n_losses = trainClassANN!(ann, (X, Y), false;
+        maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+    
+    for i in 1:maxNumNeurons
+        ann = addClassCascadeNeuron(ann, transferFunction=transferFunction)
+        
+        if length(ann) > 1
+            
+            trainOnly2Last = true
+            n2_losses = trainClassANN!(ann, (X, Y), trainOnly2Last;
+                maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+            n_losses = vcat(n_losses, n2_losses[2:end])
+        end
+        
+        t_losses = trainClassANN!(ann, (X, Y), false;
+            maxEpochs=maxEpochs, minLoss=minLoss, learningRate=learningRate, minLossChange=minLossChange, lossChangeWindowSize=lossChangeWindowSize)
+        
+        n_losses = vcat(n_losses, t_losses[2:end])
+    
+    end
+
+    return ann, n_losses
+
 end;
 
 function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
     transferFunction::Function=σ,
     maxEpochs::Int=100, minLoss::Real=0.0, learningRate::Real=0.01, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
-end;
     
+    X, Y_bool = trainingDataset
+    Y = reshape(Y_bool, :, 1)
+
+    return trainClassCascadeANN(maxNumNeurons, (X, Ymat);
+        transferFunction=transferFunction,
+        maxEpochs=maxEpochs,
+        minLoss=minLoss,
+        learningRate=learningRate,
+        minLossChange=minLossChange,
+        lossChangeWindowSize=lossChangeWindowSize)
+
+end;
+     
 
 # ----------------------------------------------------------------------------------------------
 # ------------------------------------- Ejercicio 3 --------------------------------------------
