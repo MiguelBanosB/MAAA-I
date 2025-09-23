@@ -171,9 +171,31 @@ function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
 end;
 
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
-    #
-    # Codigo a desarrollar
-    #
+    outputLayer = previousANN[indexOutputLayer(previousANN)]; # Capa de salida de la red anterior
+    previousLayers = previousANN[1:indexOutputLayer(previousANN)-1]; # Capas anteriores a la salida de la red anterior
+    numInputsOutputLayer = size(outputLayer.weight, 2); # Número de entradas de la capa de salida de la red anterior. Weight es la matriz de pesos de la capa (Inputs, Outputs)
+    numOutputsOutputLayer = size(outputLayer.weight, 1); # Número de salidas de la capa de salida de la red anterior
+
+    if numOutputsOutputLayer == 1
+        output = Dense(numInputsOutputLayer + 1, 1, σ)
+    else          
+        output = Chain(
+            Dense(numInputsOutputLayer + 1, numOutputsOutputLayer, identity), softmax
+        )
+    end
+
+    ann = Chain(
+        previousLayers...,
+        SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx,x) -> vcat(x, mx)), # Nueva neurona en cascada
+        output 
+    )
+
+    ann[indexOutputLayer(ann)].weight[:, 1:numInputsOutputLayer] .= outputLayer.weight # Accede a la capa de salida, toma su matriz de pesos (las conexiones antiguas) y las copia a la nueva capa
+    ann[indexOutputLayer(ann)].weight[:, end] .= 0 # Inicializa a cero las conexiones de la nueva neurona
+    ann[indexOutputLayer(ann)].bias .= outputLayer.bias # Copia el bias de la salida antigua a la nueva capa
+
+    return ann
+
 end;
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
