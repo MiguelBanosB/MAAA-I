@@ -13,7 +13,7 @@ function fileNamesFolder(folderName::String, extension::String)
     isdir(folderName) || error("The directory $folderName doesn't exist.");
     extension_upper = uppercase(extension);
     fileNames = filter(f -> endswith(uppercase(f), ".$extension_upper"), readdir(folderName));
-    fileNamesNoExtension = replace.(fileNames, ".$extension" => "");
+    fileNamesNoExtension = replace.(fileNames, ".$extension_upper" => "");
     return sort(fileNamesNoExtension);
 end;
 
