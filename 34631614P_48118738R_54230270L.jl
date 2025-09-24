@@ -269,19 +269,26 @@ using Random
 HopfieldNet = Array{Float32,2}
 
 function trainHopfield(trainingSet::AbstractArray{<:Real,2})
-    #
-    # Codigo a desarrollar
-    #
+    S = Float32.(trainingSet)
+    N = size(S, 1)
+    W = (S'*S)/Float32(N)
+    for i in axes(W,1)     
+        W[i, i] = 0
+    end
+    return W
 end;
+
+
 function trainHopfield(trainingSet::AbstractArray{<:Bool,2})
-    #
-    # Codigo a desarrollar
-    #
+    S = (2 .* trainingSet) .-1
+    trainHopfield(S)
 end;
+
+
 function trainHopfield(trainingSetNCHW::AbstractArray{<:Bool,4})
-    #
-    # Codigo a desarrollar
-    #
+    N = size(trainingSetNCHW,1)
+    S = reshape(trainingSetNCHW,N,:)
+    return trainHopfield(S)
 end;
 
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
