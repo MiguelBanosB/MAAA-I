@@ -292,15 +292,16 @@ function trainHopfield(trainingSetNCHW::AbstractArray{<:Bool,4})
 end;
 
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    S = Float32.(S)
+    out = ann * S
+    return sign.(out)
 end;
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Bool,1})
-    #
-    # Codigo a desarrollar
-    #
+    S1 = 2 .* Float32.(S) .- 1
+    out = stepHopfield(ann, S1)
+    return out .>= 0
 end;
+
 
 
 function runHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
