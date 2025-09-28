@@ -212,7 +212,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     push!(trainingLosses, initial_loss)
 
     opt_state = Flux.setup(Adam(learningRate), ann)
-    
+
     if trainOnly2LastLayers && indexOutputLayer(ann) > 2
         Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])
     end
@@ -226,19 +226,18 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
             break
         end
 
-
         if length(trainingLosses) >= lossChangeWindowSize
             lossWindow = trainingLosses[end - lossChangeWindowSize + 1:end]
             minLossValue, maxLossValue = extrema(lossWindow)
-            if ( (maxLossValue - minLossValue) / minLossValue <= minLossChange ) 
+            if ( (maxLossValue - minLossValue) / minLossValue <= minLossChange )
                 break
             end
         end
     end
 
     return trainingLosses
+    
 end;
-
 
 function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
