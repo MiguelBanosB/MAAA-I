@@ -165,9 +165,11 @@ using Flux
 indexOutputLayer(ann::Chain) = length(ann) - (ann[end]==softmax);
 
 function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
-    #
-    # Codigo a desarrollar
-    #
+    if numOutputs == 1
+        return Chain(Dense(numInputs, 1, σ))
+    else
+        return Chain(Dense(numInputs, numOutputs, identity), softmax)
+    end
 end;
 
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
@@ -200,9 +202,41 @@ end;
 
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
-    #
-    # Codigo a desarrollar
-    #
+
+    X, Y = trainingDataset
+    trainingLosses = Float32[]
+
+    loss() = Flux.logitbinarycrossentropy(ann(X), Y)
+
+    initial_loss = loss()
+    push!(trainingLosses, initial_loss)
+
+    opt_state = Flux.setup(Adam(learningRate), ann)
+    
+    if trainOnly2LastLayers && indexOutputLayer(ann) > 2
+        Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])
+    end
+
+    for numEpoch in 1:maxEpochs
+        Flux.train!(loss, Flux.params(ann), [(X, Y)], opt_state)
+        currentLoss = loss(X, Y)
+        push!(trainingLosses, currentLoss)
+
+        if currentLoss <= minLoss
+            break
+        end
+
+
+        if length(trainingLosses) >= lossChangeWindowSize
+            lossWindow = trainingLosses[end - lossChangeWindowSize + 1:end]
+            minLossValue, maxLossValue = extrema(lossWindow)
+            if ( (maxLossValue - minLossValue) / minLossValue <= minLossChange ) 
+                break
+            end
+        end
+    end
+
+    return trainingLosses
 end;
 
 
