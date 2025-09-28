@@ -11,9 +11,9 @@ using ColorTypes
 
 function fileNamesFolder(folderName::String, extension::String)    
     isdir(folderName) || error("The directory $folderName doesn't exist.");
-    extension_upper = uppercase(extension);
-    fileNames = filter(f -> endswith(uppercase(f), ".$extension_upper"), readdir(folderName));
-    fileNamesNoExtension = replace.(fileNames, ".$extension_upper" => "");
+    extension = uppercase(extension);
+    fileNames = filter(f -> endswith(uppercase(f), ".$extension"), readdir(folderName))
+    fileNamesNoExtension = replace.(fileNames, "." * lowercase(extension) => "");
     return sort(fileNamesNoExtension);
 end;
 
