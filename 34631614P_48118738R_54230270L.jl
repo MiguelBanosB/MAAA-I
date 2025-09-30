@@ -7,6 +7,7 @@ using DelimitedFiles
 using JLD2
 using Images
 using ColorTypes
+using Statistics
 
 
 function fileNamesFolder(folderName::String, extension::String)    
@@ -418,15 +419,25 @@ function classifyMNISTImages(imageArray::AbstractArray{<:Bool,4}, templateInputs
 end;
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
-    train_images, train_labels, test_images, test_labels = loadMNISTDataset(datasetFolder; labels, Float32)
-    template_images = averageMNISTImages(train_images, train_labels)
+    train_images, train_labels, test_images, test_labels = loadMNISTDataset(datasetFolder; labels=labels, datasetType=Float32)
+    template_images, template_labels = averageMNISTImages(train_images, train_labels)
     
     train_images_bin    = train_images    .>= threshold
     test_images_bin     = test_images     .>= threshold
     template_images_bin = template_images .>= threshold
     
-    Hopfield_net = trainHopfield(template_images_bin)
-    new_matrix = runHopfield(Hopfield_net)
+    hopfield_net = trainHopfield(template_images_bin)
+
+    train_rec = runHopfield(hopfield_net, train_images_bin)
+    train_pred = classifyMNISTImages(train_rec, template_images_bin, template_labels)
+
+    test_rec = runHopfield(hopfield_net, test_images_bin)
+    test_pred = classifyMNISTImages(test_rec, template_images_bin, template_labels)
+
+    acc_train = mean(train_pred .== train_labels)
+    acc_test  = mean(test_pred  .== test_labels)
+
+    return (acc_train, acc_test)
 
 end;
 
