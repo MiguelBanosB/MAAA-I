@@ -200,43 +200,59 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
 
 end;
 
+
 function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}}, trainOnly2LastLayers::Bool;
     maxEpochs::Int=1000, minLoss::Real=0.0, learningRate::Real=0.001, minLossChange::Real=1e-7, lossChangeWindowSize::Int=5)
 
     X, Y = trainingDataset
-    trainingLosses = Float32[]
+    X = Float32.(X)
+    
+    #Funcion de perdida
+    function loss(model=ann, x=X, y=Y)
 
-    loss() = Flux.logitbinarycrossentropy(ann(X), Y)
+        if size(y, 1) == 1
+            return Flux.Losses.binarycrossentropy(model(x), y)
+        else
+            return Flux.Losses.crossentropy(model(x), y)
+        end
+    end;
 
-    initial_loss = loss()
-    push!(trainingLosses, initial_loss)
+    #Pérdida inicial
+    initial_loss = Float32(loss(ann, X, Y))
+    trainingLosses = Float32[initial_loss]
 
+    #Optimizador
     opt_state = Flux.setup(Adam(learningRate), ann)
 
-    if trainOnly2LastLayers && indexOutputLayer(ann) > 2
+    # Congelar capas si corresponde
+    if trainOnly2LastLayers && length(ann) > 2
         Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])
     end
 
+    data = [(X, Y)]
+
     for numEpoch in 1:maxEpochs
-        Flux.train!(loss, Flux.params(ann), [(X, Y)], opt_state)
-        currentLoss = loss(X, Y)
+        Flux.train!(loss, ann, data, opt_state)
+        currentLoss = loss()
         push!(trainingLosses, currentLoss)
 
+        #Criterio de parada por pérdida mínima
         if currentLoss <= minLoss
             break
         end
 
-        if length(trainingLosses) >= lossChangeWindowSize
+        #Criterio de parada por cambio mínimo en las últimas pérdidas
+        if length(trainingLosses) >= lossChangeWindowSize + 1
             lossWindow = trainingLosses[end - lossChangeWindowSize + 1:end]
             minLossValue, maxLossValue = extrema(lossWindow)
-            if ( (maxLossValue - minLossValue) / minLossValue <= minLossChange )
+            if minLossValue > 0 && ((maxLossValue - minLossValue) / minLossValue <= minLossChange ) #Puede dar problemas si minLossValue es 0
                 break
             end
         end
     end
 
     return trainingLosses
-    
+    
 end;
 
 function trainClassCascadeANN(maxNumNeurons::Int,
@@ -388,15 +404,30 @@ function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::Abs
 end;
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Bool,4}, templateInputs::AbstractArray{<:Bool,4}, templateLabels::AbstractArray{Int,1})
-    #
-    # Codigo a desarrollar
-    #
+    N = size(imageArray, 1)
+    outputs = fill(-1, N)
+    for indexLabel in eachindex(templateLabels)
+        label = templateLabels[indexLabel]
+        template = templateInputs[[indexLabel], :, :, :];
+        indicesCoincidence = vec(all(imageArray .== template, dims=[3,4]));
+        outputs[indicesCoincidence] .= label
+    end
+
+    return outputs
+
 end;
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
-    #
-    # Codigo a desarrollar
-    #
+    train_images, train_labels, test_images, test_labels = loadMNISTDataset(datasetFolder; labels, Float32)
+    template_images = averageMNISTImages(train_images, train_labels)
+    
+    train_images_bin    = train_images    .>= threshold
+    test_images_bin     = test_images     .>= threshold
+    template_images_bin = template_images .>= threshold
+    
+    Hopfield_net = trainHopfield(template_images_bin)
+    new_matrix = runHopfield(Hopfield_net)
+
 end;
 
 
