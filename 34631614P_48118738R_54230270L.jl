@@ -381,21 +381,22 @@ end;
 
 
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
-    #
-    # Codigo a desarrollar
-    #
+    noisyDataset = copy(datasetNCHW)
+    pixels = legnth(noisyDataset)
+    n_change = round(Int, ratioNoise * pixels)
+    ind = randperm(pixels)[1:n_change]
+    noisyDataset[ind] .= .!noisyDataset[ind]
+    return noisyDataset
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
-    #
-    # Codigo a desarrollar
-    #
+    N, C, H, W = size(datasetNCHW)
+    h_crop = round(Int, ratioCrop * H / 2)
 end;
 
 function randomImages(numImages::Int, resolution::Int)
-    #
-    # Codigo a desarrollar
-    #
+    images = randn(Float32, numImages, 1, resolution, resolution) .>= 0
+    return images
 end;
 
 function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::AbstractArray{Int,1})
