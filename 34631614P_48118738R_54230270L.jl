@@ -391,6 +391,7 @@ function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
     return datasetNCHW
 end;
 
+
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
     dataset = copy(datasetNCHW)
     if ratioCrop == 0
@@ -405,16 +406,27 @@ function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
 
 end;
 
+
 function randomImages(numImages::Int, resolution::Int)
     images = randn(Float32, numImages, 1, resolution, resolution) .>= 0
     return images
 end;
 
+
 function averageMNISTImages(imageArray::AbstractArray{<:Real,4}, labelArray::AbstractArray{Int,1})
-    #
-    # Codigo a desarrollar
-    #
+    labels = unique(labelArray)
+    N = length(labels)
+    _,C,H,W = size(imageArray)
+    output_matrix = zeros(eltype(imageArray), N, C, H, W)
+
+    for indexLabel in 1:N
+        average = dropdims(mean(imageArray[labelArray.==labels[indexLabel], 1, :, :], dims=1), dims=1)
+        output_matrix[indexLabel,:,:,:] = average
+    end
+
+    return (output_matrix, labels)
 end;
+
 
 function classifyMNISTImages(imageArray::AbstractArray{<:Bool,4}, templateInputs::AbstractArray{<:Bool,4}, templateLabels::AbstractArray{Int,1})
     N = size(imageArray, 1)
@@ -452,7 +464,6 @@ function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{I
     return (acc_train, acc_test)
 
 end;
-
 
 
 # ----------------------------------------------------------------------------------------------
