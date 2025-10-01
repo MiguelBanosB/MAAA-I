@@ -341,17 +341,19 @@ function trainHopfield(trainingSetNCHW::AbstractArray{<:Bool,4})
     return trainHopfield(S)
 end;
 
+
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
     S = Float32.(S)
     out = ann * S
     return sign.(out)
 end;
+
+
 function stepHopfield(ann::HopfieldNet, S::AbstractArray{<:Bool,1})
     S1 = 2 .* Float32.(S) .- 1
     out = stepHopfield(ann, S1)
     return out .>= 0
 end;
-
 
 
 function runHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
@@ -364,6 +366,8 @@ function runHopfield(ann::HopfieldNet, S::AbstractArray{<:Real,1})
     end;
     return S
 end;
+
+
 function runHopfield(ann::HopfieldNet, dataset::AbstractArray{<:Real,2})
     outputs = copy(dataset);
     for i in 1:size(dataset,1)
@@ -371,13 +375,12 @@ function runHopfield(ann::HopfieldNet, dataset::AbstractArray{<:Real,2})
     end;
     return outputs;
 end;
+
+
 function runHopfield(ann::HopfieldNet, datasetNCHW::AbstractArray{<:Real,4})
     outputs = runHopfield(ann, reshape(datasetNCHW, size(datasetNCHW,1), size(datasetNCHW,3)*size(datasetNCHW,4)));
     return reshape(outputs, size(datasetNCHW,1), 1, size(datasetNCHW,3), size(datasetNCHW,4));
 end;
-
-
-
 
 
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
@@ -389,6 +392,16 @@ function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
+    dataset = copy(datasetNCHW)
+    if ratioCrop == 0
+        return dataset
+    end
+
+    _,_,_,W = size(dataset)
+    first_column = Int(round(W* (1 - ratioCrop)) + 1)
+
+    dataset[:,:,:,first_column:W] .= false
+    return dataset
 
 end;
 
