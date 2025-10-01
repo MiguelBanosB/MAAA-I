@@ -13,7 +13,7 @@ println(VERSION)
 #  y la 1.11.3 de Random
 using Random; println(Random.VERSION)
 #  y la versión 0.14.25 de Flux
-import Pkg  
+import Pkg
 Pkg.status("Flux")
 
 # Es posible que con otras versiones los resultados sean distintos, estando las funciones bien, sobre todo en la funciones que implican alguna componente aleatoria
@@ -184,11 +184,11 @@ seed!(1); ann, trainingLosses = trainClassCascadeANN(4, (inputs, reshape(targets
 @assert(eltype(trainingLosses)==Float32);
 @assert(all(isapprox.(trainingLosses, Float32[0.70495284, 0.7035844, 0.70227885, 0.7010367, 0.6998583, 0.69874185, 0.69768566, 0.69668776, 0.695746, 0.6948588, 0.6940225, 0.6931689, 0.69235694, 0.6915839, 0.690847, 0.69014233, 0.68946385, 0.6888036, 0.68815523, 0.68751377, 0.6868759, 0.68618554, 0.6854976, 0.6848116, 0.6841279, 0.6834463, 0.682767, 0.6820895, 0.6814145, 0.6807416, 0.680071, 0.67938733, 0.6787043, 0.6780223, 0.6773417, 0.6766619, 0.67598337, 0.6753062, 0.67463005, 0.673955, 0.6732813, 0.67262596, 0.67197335, 0.67132294, 0.67067486, 0.6700293, 0.6693859, 0.6687449, 0.668106, 0.66746974, 0.66683555, 0.6661611, 0.66548693, 0.66481334, 0.66413987, 0.6634669, 0.6627942, 0.66212213, 0.6614505, 0.6607793, 0.6601087, 0.6594853, 0.6588651, 0.658248, 0.6576337, 0.6570225, 0.65641433, 0.655809, 0.6552067, 0.65460736, 0.65401053, 0.6533396, 0.6526679, 0.65199506, 0.6513217, 0.65064716, 0.6499717, 0.6492952, 0.6486175, 0.6479387, 0.64725846])))
 @assert(length(ann)==5)
-@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023348227])));
-@assert(all(isapprox.(ann.layers[2].layers.bias, [0.038503256])));
-@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.0062524006])));
-@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018305209])));
-@assert(all(isapprox.(ann.layers[5].bias,        [0.04217559])));
+@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023382332])));
+@assert(all(isapprox.(ann.layers[2].layers.bias, [-0.03736015])));
+@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.028381256])));
+@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018296173])));
+@assert(all(isapprox.(ann.layers[5].bias,        [0.042160995])));
 
 
 seed!(1); ann, trainingLosses = trainClassCascadeANN(4, (inputs, targets);
@@ -196,11 +196,11 @@ seed!(1); ann, trainingLosses = trainClassCascadeANN(4, (inputs, targets);
 @assert(eltype(trainingLosses)==Float32);
 @assert(all(isapprox.(trainingLosses, Float32[0.70495284, 0.7035844, 0.70227885, 0.7010367, 0.6998583, 0.69874185, 0.69768566, 0.69668776, 0.695746, 0.6948588, 0.6940225, 0.6931689, 0.69235694, 0.6915839, 0.690847, 0.69014233, 0.68946385, 0.6888036, 0.68815523, 0.68751377, 0.6868759, 0.68618554, 0.6854976, 0.6848116, 0.6841279, 0.6834463, 0.682767, 0.6820895, 0.6814145, 0.6807416, 0.680071, 0.67938733, 0.6787043, 0.6780223, 0.6773417, 0.6766619, 0.67598337, 0.6753062, 0.67463005, 0.673955, 0.6732813, 0.67262596, 0.67197335, 0.67132294, 0.67067486, 0.6700293, 0.6693859, 0.6687449, 0.668106, 0.66746974, 0.66683555, 0.6661611, 0.66548693, 0.66481334, 0.66413987, 0.6634669, 0.6627942, 0.66212213, 0.6614505, 0.6607793, 0.6601087, 0.6594853, 0.6588651, 0.658248, 0.6576337, 0.6570225, 0.65641433, 0.655809, 0.6552067, 0.65460736, 0.65401053, 0.6533396, 0.6526679, 0.65199506, 0.6513217, 0.65064716, 0.6499717, 0.6492952, 0.6486175, 0.6479387, 0.64725846])))
 @assert(length(ann)==5)
-@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023348227])));
-@assert(all(isapprox.(ann.layers[2].layers.bias, [0.038503256])));
-@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.0062524006])));
-@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018305209])));
-@assert(all(isapprox.(ann.layers[5].bias,        [0.04217559])));
+@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023382332])));
+@assert(all(isapprox.(ann.layers[2].layers.bias, [-0.03736015])));
+@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.028381256])));
+@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018296173])));
+@assert(all(isapprox.(ann.layers[5].bias,        [0.042160995])));
 
 
 

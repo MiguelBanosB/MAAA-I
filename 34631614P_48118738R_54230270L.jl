@@ -179,6 +179,8 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
     numInputsOutputLayer = size(outputLayer.weight, 2); 
     numOutputsOutputLayer = size(outputLayer.weight, 1); 
 
+    hidden = 
+        SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx,x) -> vcat(x, mx));
     if numOutputsOutputLayer == 1
         output = Dense(numInputsOutputLayer + 1, 1, σ)
     else          
@@ -189,7 +191,7 @@ function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ
 
     ann = Chain(
         previousLayers...,
-        SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx,x) -> vcat(x, mx)), 
+        hidden, 
         output 
     )
 
@@ -207,8 +209,8 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
 
     X, Y = trainingDataset
     X = Float32.(X)
+    Y = Float32.(Y)
     
-    #Funcion de perdida
     function loss(model=ann, x=X, y=Y)
 
         if size(y, 1) == 1
@@ -218,35 +220,28 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
         end
     end;
 
-    #Pérdida inicial
     initial_loss = Float32(loss(ann, X, Y))
     trainingLosses = Float32[initial_loss]
 
-    #Optimizador
     opt_state = Flux.setup(Adam(learningRate), ann)
 
-    # Congelar capas si corresponde
     if trainOnly2LastLayers && length(ann) > 2
         Flux.freeze!(opt_state.layers[1:(indexOutputLayer(ann)-2)])
     end
 
-    data = [(X, Y)]
-
-    for numEpoch in 1:maxEpochs
-        Flux.train!(loss, ann, data, opt_state)
-        currentLoss = loss()
+    for _ in 1:maxEpochs
+        Flux.train!(loss, ann, [(X,Y)], opt_state)
+        currentLoss = Float32(loss(ann, X, Y))
         push!(trainingLosses, currentLoss)
 
-        #Criterio de parada por pérdida mínima
         if currentLoss <= minLoss
             break
         end
 
-        #Criterio de parada por cambio mínimo en las últimas pérdidas
-        if length(trainingLosses) >= lossChangeWindowSize + 1
+        if length(trainingLosses) >= lossChangeWindowSize
             lossWindow = trainingLosses[end - lossChangeWindowSize + 1:end]
             minLossValue, maxLossValue = extrema(lossWindow)
-            if minLossValue > 0 && ((maxLossValue - minLossValue) / minLossValue <= minLossChange ) #Puede dar problemas si minLossValue es 0
+            if minLossValue > 0 && ((maxLossValue - minLossValue) / minLossValue <= minLossChange )
                 break
             end
         end
@@ -272,7 +267,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     for i in 1:maxNumNeurons
         ann = addClassCascadeNeuron(ann, transferFunction=transferFunction)
         
-        if length(ann) > 1
+        if i > 1
             
             trainOnly2Last = true
             n2_losses = trainClassANN!(ann, (X, Y), trainOnly2Last;
@@ -299,7 +294,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     X, Y_bool = trainingDataset
     Y = reshape(Y_bool, :, 1)
 
-    return trainClassCascadeANN(maxNumNeurons, (X, Ymat);
+    return trainClassCascadeANN(maxNumNeurons, (X, Y);
         transferFunction=transferFunction,
         maxEpochs=maxEpochs,
         minLoss=minLoss,
