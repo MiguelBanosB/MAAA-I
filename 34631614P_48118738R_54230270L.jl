@@ -173,14 +173,14 @@ function newClassCascadeNetwork(numInputs::Int, numOutputs::Int)
     end
 end;
 
+
 function addClassCascadeNeuron(previousANN::Chain; transferFunction::Function=σ)
     outputLayer = previousANN[indexOutputLayer(previousANN)]; 
     previousLayers = previousANN[1:indexOutputLayer(previousANN)-1]; 
     numInputsOutputLayer = size(outputLayer.weight, 2); 
     numOutputsOutputLayer = size(outputLayer.weight, 1); 
 
-    hidden = 
-        SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx,x) -> vcat(x, mx));
+    hidden = SkipConnection(Dense(numInputsOutputLayer, 1, transferFunction), (mx,x) -> vcat(x, mx));
     if numOutputsOutputLayer == 1
         output = Dense(numInputsOutputLayer + 1, 1, σ)
     else          
@@ -251,6 +251,7 @@ function trainClassANN!(ann::Chain, trainingDataset::Tuple{AbstractArray{<:Real,
     
 end;
 
+
 function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,2}};
     transferFunction::Function=σ,
@@ -285,6 +286,7 @@ function trainClassCascadeANN(maxNumNeurons::Int,
     return ann, n_losses
 
 end;
+
 
 function trainClassCascadeANN(maxNumNeurons::Int,
     trainingDataset::  Tuple{AbstractArray{<:Real,2}, AbstractArray{Bool,1}};
@@ -435,6 +437,7 @@ function classifyMNISTImages(imageArray::AbstractArray{<:Bool,4}, templateInputs
     return outputs
 
 end;
+
 
 function calculateMNISTAccuracies(datasetFolder::String, labels::AbstractArray{Int,1}, threshold::Real)
     train_images, train_labels, test_images, test_labels = loadMNISTDataset(datasetFolder; labels=labels, datasetType=Float32)
