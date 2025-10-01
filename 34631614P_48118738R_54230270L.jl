@@ -381,17 +381,15 @@ end;
 
 
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
-    noisyDataset = copy(datasetNCHW)
-    pixels = legnth(noisyDataset)
+    pixels = length(datasetNCHW)
     n_change = round(Int, ratioNoise * pixels)
-    ind = randperm(pixels)[1:n_change]
-    noisyDataset[ind] .= .!noisyDataset[ind]
-    return noisyDataset
+    ind = shuffle(1:length(datasetNCHW))[1:Int(round(length(datasetNCHW)*ratioNoise))]
+    datasetNCHW[ind] .= .!datasetNCHW[ind]
+    return datasetNCHW
 end;
 
 function cropImages(datasetNCHW::AbstractArray{<:Bool,4}, ratioCrop::Real)
-    N, C, H, W = size(datasetNCHW)
-    h_crop = round(Int, ratioCrop * H / 2)
+
 end;
 
 function randomImages(numImages::Int, resolution::Int)
