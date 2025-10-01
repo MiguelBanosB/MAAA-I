@@ -379,11 +379,10 @@ end;
 
 
 function addNoise(datasetNCHW::AbstractArray{<:Bool,4}, ratioNoise::Real)
-    pixels = length(datasetNCHW)
-    n_change = round(Int, ratioNoise * pixels)
-    ind = shuffle(1:length(datasetNCHW))[1:Int(round(length(datasetNCHW)*ratioNoise))]
-    datasetNCHW[ind] .= .!datasetNCHW[ind]
-    return datasetNCHW
+    noiseSet = copy(datasetNCHW)
+    indices = shuffle(1:length(noiseSet))[1:Int(round(length(noiseSet)*ratioNoise))];
+    noiseSet[indices] .= .!noiseSet[indices]
+    return noiseSet
 end;
 
 
