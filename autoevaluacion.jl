@@ -1,93 +1,34 @@
-
-
 # Archivo de pruebas para realizar autoevaluación de algunas funciones de los ejercicios
 
 # Importamos el archivo con las soluciones a los ejercicios
 include("34631614P_48118738R_54230270L.jl");
 #   Cambiar "soluciones.jl" por el nombre del archivo que contenga las funciones desarrolladas
 
-
-
-# Fichero de pruebas realizado con la versión 1.11.2 de Julia
+# Fichero de pruebas realizado con la versión 1.11.3 de Julia
 println(VERSION)
 #  y la 1.11.3 de Random
 using Random; println(Random.VERSION)
-#  y la versión 0.14.25 de Flux
+#  y las versiones 0.14.25 de Flux y 0.20.0 de MLJ
 import Pkg
 Pkg.status("Flux")
+Pkg.status("MLJ")
 
 # Es posible que con otras versiones los resultados sean distintos, estando las funciones bien, sobre todo en la funciones que implican alguna componente aleatoria
 
-# Para la correcta ejecución de este archivo, los datasets estarán en las siguientes carpetas:
-datasetFolder = "../datasets"; # Incluye el dataset MNIST
-imageFolder = "../datasets/images";
-# Cambiadlas por las carpetas donde tengáis los datasets y las imágenes
+
+# Para la correcta ejecución de este archivo, los datasets estarán en la siguiente carpeta:
+datasetFolder = "../datasets";
+# Cambiadla por la carpeta donde tengáis los datasets
 
 @assert(isdir(datasetFolder))
-@assert(isdir(imageFolder))
+
+
+# Cargamos el dataset
+dataset = loadDataset("sonar", datasetFolder; datasetType=Float64);
+inputs, targets = dataset
 
 # ----------------------------------------------------------------------------------------------
-# ------------------------------------- Ejercicio 1 --------------------------------------------
-# ----------------------------------------------------------------------------------------------
-
-
-imageFileNames = fileNamesFolder(imageFolder,"tif");
-@assert(imageFileNames == ["cameraman", "lake", "lena_gray_512", "livingroom", "mandril_gray", "peppers_gray", "pirate", "walkbridge"]);
-
-inputs, targets = loadDataset("sonar", datasetFolder; datasetType=Float32);
-@assert(size(inputs)==(208,60))
-@assert(length(targets)==208)
-@assert(eltype(inputs)==Float32)
-@assert(eltype(targets)==Bool)
-
-image = loadImage("cameraman", imageFolder; datasetType=Float64, resolution=64)
-@assert(size(image)==(64,64))
-@assert(eltype(image)==Float64)
-
-imagesNCHW = loadImagesNCHW(imageFolder; datasetType=Float64, resolution=32)
-@assert(size(imagesNCHW)==(8,1,32,32))
-@assert(eltype(imagesNCHW)==Float64)
-
-
-MNISTDataset = loadMNISTDataset(datasetFolder; labels=[3,6,9], datasetType=Float64)
-@assert(size(MNISTDataset[1])==(17998, 1, 28, 28))
-@assert(eltype(MNISTDataset[1])==Float64)
-@assert(length(MNISTDataset[2])==17998)
-@assert(sort(unique(MNISTDataset[2]))==[3,6,9])
-@assert(size(MNISTDataset[3])==(2977, 1, 28, 28))
-@assert(eltype(MNISTDataset[3])==Float64)
-@assert(length(MNISTDataset[4])==2977)
-@assert(sort(unique(MNISTDataset[4]))==[3,6,9])
-
-
-MNISTDataset = loadMNISTDataset(datasetFolder; labels=[2,7,-1], datasetType=Float32)
-@assert(size(MNISTDataset[1])==(60000, 1, 28, 28))
-@assert(eltype(MNISTDataset[1])==Float32)
-@assert(length(MNISTDataset[2])==60000)
-@assert(eltype(MNISTDataset[2])<:Integer)
-@assert(sort(unique(MNISTDataset[2]))==[-1,2,7])
-@assert(size(MNISTDataset[3])==(10000, 1, 28, 28))
-@assert(eltype(MNISTDataset[3])==Float32)
-@assert(length(MNISTDataset[4])==10000)
-@assert(eltype(MNISTDataset[4])<:Integer)
-@assert(sort(unique(MNISTDataset[4]))==[-1,2,7])
-
-
-sinEncoding, cosEncoding = cyclicalEncoding([1, 2, 3, 2, 1, 0, -1, -2, -3]);
-@assert(all(isapprox.(sinEncoding, [-0.433883739117558, -0.9749279121818236, -0.7818314824680299, -0.9749279121818236, -0.433883739117558, 0.43388373911755823, 0.9749279121818236, 0.7818314824680298, 0.0]; rtol=1e-4)))
-@assert(all(isapprox.(cosEncoding, [-0.9009688679024191, -0.2225209339563146, 0.6234898018587334, -0.2225209339563146, -0.9009688679024191, -0.900968867902419, -0.22252093395631434, 0.6234898018587336, 1.0]; rtol=1e-4)))
-
-
-inputs, targets = loadStreamLearningDataset(datasetFolder; datasetType=Float64)
-@assert(size(inputs)==(45312,7))
-@assert(length(targets)==45312)
-@assert(eltype(inputs)==Float64)
-@assert(eltype(targets)==Bool)
-
-
-
-# ----------------------------------------------------------------------------------------------
-# ------------------------------------- Ejercicio 2 --------------------------------------------
+# ------------------------------------- Ejercicio 4 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
 
 
@@ -98,181 +39,118 @@ using Random:seed!
 seed!(1); @assert(isapprox(rand(), 0.07336635446929285))
 #  Si fallase aquí, seguramente dara error al comprobar los resultados de la ejecución de la siguiente función porque depende de la generación de números aleatorios
 
-inputs, targets = loadDataset("sonar", datasetFolder; datasetType=Float32);
+
+@assert(batchInputs(dataset) === inputs)
+@assert(batchTargets(dataset) === targets)
+@assert(batchLength(dataset) === 208)
+i = rand(Bool, batchLength( dataset ));
+@assert(batchTargets(selectInstances(dataset, i)) == targets[i]);
+@assert(joinBatches(selectInstances(dataset, i), selectInstances(dataset, .!i)) == (vcat(inputs[i,:], inputs[.!i,:]), vcat(targets[i], targets[.!i])))
+@assert(divideBatches(dataset, 100; shuffleRows=false) == [selectInstances(dataset, 1:100), selectInstances(dataset, 101:200), selectInstances(dataset, 201:208)])
+seed!(1); @assert(all(isapprox.(mean.(batchInputs.(divideBatches(dataset, 100; shuffleRows=true))), [0.2812910166666666, 0.28142645, 0.2803852083333333])))
+seed!(1); @assert(all(isapprox.(mean.(batchTargets.(divideBatches(dataset, 100; shuffleRows=true))), [0.43, 0.5, 0.5])))
 
 
 
-seed!(1); ann = newClassCascadeNetwork(size(inputs,2), 3)
-@assert(length(ann)==2)
-@assert(size(ann[1].weight)==(3,60))
-@assert(ann[1].σ==identity)
-@assert(ann[2]==softmax)
-@assert(size(ann(inputs'))==(3,208))
+model, supportVectors, supportVectorIndices = trainSVM(dataset, "rbf", 1; gamma=3)
+@assert(batchLength(supportVectors) == 197)
+@assert(isempty(supportVectorIndices[1]))
+@assert(length(supportVectorIndices[2]) == 197)
+@assert(issorted(supportVectorIndices[2]))
+@assert(selectInstances(dataset, supportVectorIndices[2]) == supportVectors)
 
-seed!(1); ann = newClassCascadeNetwork(size(inputs,2), 1)
-@assert(length(ann)==1)
-@assert(size(ann[1].weight)==(1,60))
-@assert(ann[1].σ==σ)
-@assert(size(ann(inputs'))==(1,208))
+model, supportVectors, supportVectorIndices = trainSVM( selectInstances(dataset, 1:100), "poly", 100; degree=2, gamma=3, coef0=2)
+@assert(batchLength(supportVectors) == 38)
+@assert(isempty(supportVectorIndices[1]))
+@assert(length(supportVectorIndices[2]) == 38)
+@assert(issorted(supportVectorIndices[2]))
+@assert(selectInstances(dataset, supportVectorIndices[2]) == supportVectors)
 
-
-
-
-seed!(1); newAnn = addClassCascadeNeuron(ann; transferFunction=tanh)
-@assert(length(newAnn)==2)
-@assert(isa( newAnn[1], SkipConnection))
-@assert(isa( newAnn[1].layers, Dense))
-@assert(size(newAnn[1].layers.weight)==(1,60))
-@assert(     newAnn[1].layers.σ == tanh)
-@assert(isa( newAnn[2], Dense))
-@assert(size(newAnn[2].weight)==(1,61))
-@assert(     newAnn[2].σ == σ)
-@assert(size(newAnn(inputs'))==(1,208))
-@assert(all(isapprox.(newAnn[2].weight[:,1:end-1], ann[1].weight)))
-@assert(all(  iszero.(newAnn[2].weight[:,end])))
-@assert(all(  iszero.(newAnn[2].bias)))
-@assert(all(isapprox.(newAnn[1].layers.bias, [0.0])));
+model, newSupportVectors, newSupportVectorIndices = trainSVM( selectInstances(dataset, 101:208), "poly", 100; degree=2, gamma=3, coef0=2, supportVectors=supportVectors)
+@assert(batchLength(newSupportVectors) == 72)
+@assert(length(newSupportVectorIndices[1]) == 30)
+@assert(length(newSupportVectorIndices[2]) == 42)
+@assert(issorted(newSupportVectorIndices[1]))
+@assert(issorted(newSupportVectorIndices[2]))
+@assert(joinBatches(
+    selectInstances(supportVectors, newSupportVectorIndices[1]),
+    selectInstances( selectInstances(dataset, 101:208 ), newSupportVectorIndices[2])) == newSupportVectors)
 
 
-seed!(1); newANN = addClassCascadeNeuron(newAnn; transferFunction=σ)
-@assert(length(newANN)==3)
-@assert(isa( newANN[1], SkipConnection))
-@assert(isa( newANN[1].layers, Dense))
-@assert(size(newANN[1].layers.weight)==(1,60))
-@assert(     newANN[1].layers.σ == tanh)
-@assert(isa( newANN[2], SkipConnection))
-@assert(isa( newANN[2].layers, Dense))
-@assert(size(newANN[2].layers.weight)==(1,61))
-@assert(     newANN[2].layers.σ == σ)
-@assert(isa( newANN[3], Dense))
-@assert(size(newANN[3].weight)==(1,62))
-@assert(     newANN[3].σ == σ)
-@assert(size(newANN(inputs'))==(1,208))
-
-@assert(all(isapprox.(newANN[1].layers.weight, newAnn[1].layers.weight)))
-@assert(all(isapprox.(newANN[1].layers.bias,   newAnn[1].layers.bias)))
-
-@assert(all(isapprox.(newANN[3].weight[:,1:end-1], newAnn[2].weight)))
-@assert(all(  iszero.(newANN[3].weight[:,end])))
-@assert(all(isapprox.(newANN[3].bias, newAnn[2].bias)))
+model = trainSVM(divideBatches(dataset, 100; shuffleRows=false), "rbf", 10; gamma=4)
+@assert(findall(predict(model, batchInputs(selectInstances(dataset, 1:20)))) == 13:20)
 
 
 
-
-
-trainingLosses = trainClassANN!(newANN, (inputs', reshape(targets, 1, :)), true;
-    maxEpochs=5, minLoss=0.0, learningRate=0.01, minLossChange=1e-6, lossChangeWindowSize=3)
-@assert(eltype(trainingLosses)==Float32);
-@assert(all(isapprox.(trainingLosses, Float32[0.70495284, 0.69371563, 0.68812746, 0.6846968, 0.6808723, 0.67615265])))
-@assert(all(isapprox.(newANN.layers[1].layers.bias, [0.0])));
-@assert(all(isapprox.(newANN.layers[2].layers.bias, [-0.011772233])));
-@assert(all(isapprox.(newANN.layers[3].bias,        [-0.020025687])));
-
-
-trainingLosses = trainClassANN!(newANN, (inputs', reshape(targets, 1, :)), false;
-    maxEpochs=5, minLoss=0.0, learningRate=0.01, minLossChange=1e-6, lossChangeWindowSize=3)
-@assert(eltype(trainingLosses)==Float32);
-@assert(all(isapprox.(trainingLosses, Float32[0.67615265, 0.6685693, 0.66276264, 0.6575051, 0.6521533, 0.64666885])))
-@assert(all(isapprox.(newANN.layers[1].layers.bias, [-0.04038628])));
-@assert(all(isapprox.(newANN.layers[2].layers.bias, [-0.04788568])));
-@assert(all(isapprox.(newANN.layers[3].bias,        [0.018007565])));
-
-
-
-seed!(1); ann, trainingLosses = trainClassCascadeANN(4, (inputs, reshape(targets, :, 1));
-    transferFunction=tanh, maxEpochs=10, minLoss=0.0, learningRate=0.001, minLossChange=1e-6, lossChangeWindowSize=3)
-@assert(eltype(trainingLosses)==Float32);
-@assert(all(isapprox.(trainingLosses, Float32[0.70495284, 0.7035844, 0.70227885, 0.7010367, 0.6998583, 0.69874185, 0.69768566, 0.69668776, 0.695746, 0.6948588, 0.6940225, 0.6931689, 0.69235694, 0.6915839, 0.690847, 0.69014233, 0.68946385, 0.6888036, 0.68815523, 0.68751377, 0.6868759, 0.68618554, 0.6854976, 0.6848116, 0.6841279, 0.6834463, 0.682767, 0.6820895, 0.6814145, 0.6807416, 0.680071, 0.67938733, 0.6787043, 0.6780223, 0.6773417, 0.6766619, 0.67598337, 0.6753062, 0.67463005, 0.673955, 0.6732813, 0.67262596, 0.67197335, 0.67132294, 0.67067486, 0.6700293, 0.6693859, 0.6687449, 0.668106, 0.66746974, 0.66683555, 0.6661611, 0.66548693, 0.66481334, 0.66413987, 0.6634669, 0.6627942, 0.66212213, 0.6614505, 0.6607793, 0.6601087, 0.6594853, 0.6588651, 0.658248, 0.6576337, 0.6570225, 0.65641433, 0.655809, 0.6552067, 0.65460736, 0.65401053, 0.6533396, 0.6526679, 0.65199506, 0.6513217, 0.65064716, 0.6499717, 0.6492952, 0.6486175, 0.6479387, 0.64725846])))
-@assert(length(ann)==5)
-@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023382332])));
-@assert(all(isapprox.(ann.layers[2].layers.bias, [-0.03736015])));
-@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.028381256])));
-@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018296173])));
-@assert(all(isapprox.(ann.layers[5].bias,        [0.042160995])));
-
-
-seed!(1); ann, trainingLosses = trainClassCascadeANN(4, (inputs, targets);
-    transferFunction=tanh, maxEpochs=10, minLoss=0.0, learningRate=0.001, minLossChange=1e-6, lossChangeWindowSize=3)
-@assert(eltype(trainingLosses)==Float32);
-@assert(all(isapprox.(trainingLosses, Float32[0.70495284, 0.7035844, 0.70227885, 0.7010367, 0.6998583, 0.69874185, 0.69768566, 0.69668776, 0.695746, 0.6948588, 0.6940225, 0.6931689, 0.69235694, 0.6915839, 0.690847, 0.69014233, 0.68946385, 0.6888036, 0.68815523, 0.68751377, 0.6868759, 0.68618554, 0.6854976, 0.6848116, 0.6841279, 0.6834463, 0.682767, 0.6820895, 0.6814145, 0.6807416, 0.680071, 0.67938733, 0.6787043, 0.6780223, 0.6773417, 0.6766619, 0.67598337, 0.6753062, 0.67463005, 0.673955, 0.6732813, 0.67262596, 0.67197335, 0.67132294, 0.67067486, 0.6700293, 0.6693859, 0.6687449, 0.668106, 0.66746974, 0.66683555, 0.6661611, 0.66548693, 0.66481334, 0.66413987, 0.6634669, 0.6627942, 0.66212213, 0.6614505, 0.6607793, 0.6601087, 0.6594853, 0.6588651, 0.658248, 0.6576337, 0.6570225, 0.65641433, 0.655809, 0.6552067, 0.65460736, 0.65401053, 0.6533396, 0.6526679, 0.65199506, 0.6513217, 0.65064716, 0.6499717, 0.6492952, 0.6486175, 0.6479387, 0.64725846])))
-@assert(length(ann)==5)
-@assert(all(isapprox.(ann.layers[1].layers.bias, [0.023382332])));
-@assert(all(isapprox.(ann.layers[2].layers.bias, [-0.03736015])));
-@assert(all(isapprox.(ann.layers[3].layers.bias, [-0.028381256])));
-@assert(all(isapprox.(ann.layers[4].layers.bias, [-0.018296173])));
-@assert(all(isapprox.(ann.layers[5].bias,        [0.042160995])));
 
 
 
 
 # ----------------------------------------------------------------------------------------------
-# ------------------------------------- Ejercicio 3 --------------------------------------------
+# ------------------------------------- Ejercicio 5 --------------------------------------------
 # ----------------------------------------------------------------------------------------------
 
 
-# Establecemos la semilla para que los resultados sean siempre los mismos
-using Random: seed!
-# Comprobamos que la generación de números aleatorios es la esperada:
-seed!(1); @assert(isapprox(rand(), 0.07336635446929285))
-#  Si fallase aquí, seguramente dara error al comprobar los resultados de la ejecución de la siguiente función porque depende de la generación de números aleatorios
 
 
-seed!(1); ann = trainHopfield(rand([-1,1],4,4));
-@assert(eltype(ann) == Float32);
-@assert(ann == Float32[0.0  0.5  0.0  1.0; 0.5  0.0  0.5  0.5; 0.0  0.5  0.0  0.0; 1.0  0.5  0.0  0.0]);
+memory, batchList = initializeStreamLearningData(datasetFolder, 1000, 100);
+@assert(isa(memory, Batch))
+@assert(mean.(memory) == (0.2477397471666336, 0.506))
+@assert(isa(batchList, Vector{<:Batch}))
+@assert(length(batchList) == 444)
+@assert(isapprox(mean(mean.(batchInputs.(batchList))), 0.26480379700660706))
+@assert(isapprox(mean(mean.(batchTargets.(batchList))), 0.57753003003003))
 
-seed!(1); ann = trainHopfield(randn(4,4).>=0);
-@assert(eltype(ann) == Float32);
-@assert(ann == Float32[0.0  0.0  -1.0  0.0; 0.0  0.0  0.0  0.0; -1.0  0.0  0.0  0.0; 0.0  0.0  0.0  0.0]);
-
-imagesNCHW = loadImagesNCHW(imageFolder; datasetType=Float64, resolution=2)
-ann = trainHopfield(imagesNCHW.>=0.5);
-@assert(eltype(ann) == Float32);
-@assert(ann == Float32[0.0  -0.5   0.0  -0.5; -0.5   0.0  -0.5   0.0;  0.0  -0.5   0.0   0.5; -0.5   0.0   0.5   0.0]);
-
-
-seed!(1); S = stepHopfield(ann, rand([-1,1],4))
-@assert(eltype(S) == Float32);
-@assert(S == Float32[0, 0, 1, 1]);
-
-seed!(1); S = stepHopfield(ann, randn(4).>=0)
-@assert(eltype(S) == Bool);
-@assert(S == Bool[0, 1, 1, 1]);
-
-
-imagesNCHW = loadImagesNCHW(imageFolder; datasetType=Float64, resolution=8).>=0.5;
-
-seed!(1); newImagesNCHW = addNoise(imagesNCHW, 0.5);
-@assert(eltype(newImagesNCHW)==eltype(imagesNCHW))
-@assert(size(newImagesNCHW)==size(imagesNCHW))
-@assert(0.45 <= mean(newImagesNCHW .== imagesNCHW) <= 0.55)
-
-newImagesNCHW = cropImages(imagesNCHW, 0.25);
-@assert(eltype(newImagesNCHW)==eltype(imagesNCHW))
-@assert(size(newImagesNCHW)==size(imagesNCHW))
-@assert(!any(newImagesNCHW[:,:,:,7:8]))
-
-seed!(1); newImagesNCHW = randomImages(10, 32);
-@assert(size(newImagesNCHW)==(10,1,32,32))
-@assert(eltype(newImagesNCHW)==Bool)
-@assert(0.45 <= mean(newImagesNCHW) <= 0.55)
+addBatch!(memory, batchList[1])
+@assert(all(isapprox.(mean.(memory), (0.25013414f0, 0.531))))
 
 
 
+accuracies  = streamLearning_SVM(datasetFolder, 1000, 500, "rbf", 1.; gamma=2);
+@assert(isa(accuracies, Vector{<:Real}))
+@assert(length(accuracies) == 89);
+@assert(all(isapprox.(accuracies, [0.498, 0.684, 0.616, 0.624, 0.65, 0.64, 0.608, 0.656, 0.558, 0.636, 0.656, 0.678, 0.546, 0.624, 0.714, 0.664, 0.568, 0.682, 0.688, 0.622, 0.592, 0.662, 0.608, 0.584, 0.68, 0.794, 0.696, 0.756, 0.586, 0.646, 0.606, 0.736, 0.756, 0.626, 0.686, 0.796, 0.654, 0.816, 0.668, 0.69, 0.644, 0.7, 0.696, 0.664, 0.76, 0.676, 0.74, 0.66, 0.656, 0.754, 0.842, 0.818, 0.696, 0.68, 0.668, 0.608, 0.682, 0.582, 0.666, 0.662, 0.602, 0.59, 0.618, 0.78, 0.664, 0.684, 0.578, 0.638, 0.7, 0.756, 0.678, 0.706, 0.664, 0.728, 0.658, 0.708, 0.702, 0.68, 0.658, 0.666, 0.718, 0.67, 0.73, 0.654, 0.688, 0.586, 0.704, 0.772, 0.7852564102564102])))
 
-MNISTDataset = loadMNISTDataset(datasetFolder; labels=[2,8], datasetType=Float32);
 
-templateInputs, templateLabels = averageMNISTImages(MNISTDataset[1], MNISTDataset[2]);
-@assert(size(templateInputs)==(2,1,28,28))
-@assert(eltype(templateInputs)==Float32)
-@assert(length(templateLabels)==2)
-@assert(unique(templateLabels)==[2,8])
-@assert(eltype(templateLabels)<:Integer)
+accuracies = streamLearning_ISVM(datasetFolder, 1000, 500, "rbf", 1.; gamma=2);
+@assert(isa(accuracies, Vector{<:Real}))
+@assert(length(accuracies) == 90);
+@assert(all(isapprox.(accuracies, [0.632, 0.446, 0.64, 0.608, 0.566, 0.63, 0.604, 0.62, 0.662, 0.494, 0.662, 0.662, 0.63, 0.55, 0.556, 0.684, 0.604, 0.628, 0.646, 0.722, 0.572, 0.546, 0.69, 0.612, 0.558, 0.66, 0.782, 0.704, 0.748, 0.572, 0.622, 0.602, 0.732, 0.75, 0.612, 0.714, 0.79, 0.646, 0.814, 0.688, 0.674, 0.644, 0.708, 0.716, 0.69, 0.758, 0.66, 0.728, 0.66, 0.604, 0.748, 0.832, 0.812, 0.694, 0.682, 0.652, 0.58, 0.682, 0.578, 0.636, 0.63, 0.636, 0.582, 0.61, 0.752, 0.636, 0.7, 0.578, 0.588, 0.706, 0.752, 0.662, 0.666, 0.644, 0.71, 0.626, 0.722, 0.712, 0.684, 0.622, 0.678, 0.726, 0.696, 0.744, 0.648, 0.642, 0.59, 0.636, 0.796, 0.7884615384615384])))
 
-outputLabels = classifyMNISTImages(templateInputs[[2,1],:,:,:].>=0.5, templateInputs.>=0.5, templateLabels);
-@assert(eltype(outputLabels)<:Integer)
-@assert(       outputLabels==[8,2])
+distances = euclideanDistances(memory, batchList[1][1][1,:]);
+@assert(isa(distances, Vector{<:Real}))
+@assert(all(isapprox.(distances[1:3], [2.1177654, 2.1170123, 2.117566])))
 
-trainingAccuracy, testAccuracy = calculateMNISTAccuracies(datasetFolder, [8,2], 0.5);
-@assert(isapprox(trainingAccuracy, 0.8861038191210094));
-@assert(isapprox(testAccuracy,     0.8773678963110668));
+nearestInstances =  nearestElements(memory, batchList[1][1][1,:], 3);
+@assert(all(isapprox(batchInputs(nearestInstances), 
+    [0.0  1.0  0.851064  0.582118  0.003467  0.422915  0.414912;
+     0.0  1.0  0.829787  0.562928  0.003467  0.422915  0.414912;
+     0.0  1.0  0.87234   0.557721  0.003467  0.422915  0.414912])))
+@assert(all(batchTargets(nearestInstances) .== [false, true, true]))
+
+output = predictKNN(memory, batchList[1][1][1,:], 10);
+@assert(!output);
+
+outputs = predictKNN(memory, batchList[1][1][1:10,:], 10);
+@assert(isa(outputs, Vector{<:Bool}))
+@assert(outputs == Bool[0, 0, 0, 1, 1, 0, 1, 1, 1, 1])
+
+accuracies = streamLearning_KNN(datasetFolder, 1000, 500, 9);
+@assert(isa(accuracies, Vector{<:Real}))
+@assert(length(accuracies) == 89);
+@assert(all(isapprox.(accuracies, [0.496, 0.652, 0.65, 0.638, 0.67, 0.644, 0.65, 0.738, 0.564, 0.676, 0.668, 0.636, 0.58, 0.656, 0.678, 0.718, 0.62, 0.73, 0.756, 0.706, 0.618, 0.648, 0.602, 0.602, 0.686, 0.786, 0.714, 0.77, 0.608, 0.598, 0.646, 0.748, 0.76, 0.694, 0.756, 0.784, 0.678, 0.79, 0.696, 0.7, 0.602, 0.75, 0.682, 0.662, 0.738, 0.642, 0.734, 0.682, 0.614, 0.672, 0.81, 0.818, 0.692, 0.67, 0.652, 0.594, 0.658, 0.622, 0.556, 0.69, 0.594, 0.676, 0.628, 0.71, 0.664, 0.646, 0.602, 0.588, 0.708, 0.752, 0.68, 0.662, 0.65, 0.732, 0.568, 0.72, 0.716, 0.67, 0.61, 0.662, 0.684, 0.75, 0.734, 0.642, 0.666, 0.568, 0.744, 0.79, 0.7660256410256411])))
+
+
+
+
+# ----------------------------------------------------------------------------------------------
+# ------------------------------------- Ejercicio 6 --------------------------------------------
+# ----------------------------------------------------------------------------------------------
+
+
+
+output = predictKNN_SVM(dataset, inputs[1,:], 7, 1.);
+@assert(!output);
+
+outputs = predictKNN_SVM(dataset, inputs[1:10,:], 7, 1.);
+@assert(outputs == Bool[0, 0, 0, 0, 0, 0, 0, 0, 0, 1])
