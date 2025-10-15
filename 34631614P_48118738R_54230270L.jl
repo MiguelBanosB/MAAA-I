@@ -545,15 +545,15 @@ end;
 
 
 function initializeStreamLearningData(datasetFolder::String, windowSize::Int, batchSize::Int)
-    #
-    # Codigo a desarrollar
-    #
+    loadedData = loadStreamLearningDataset(datasetFolder)
+    memory = selectInstances(loadedData, 1:windowSize)
+    remainingData = selectInstances(loadedData, (windowSize+1):batchLength(loadedData))
+    streamBatches = divideBatches(remainingData, batchSize; shuffleRows=false)
+    return (memory, streamBatches)
 end;
 
 function addBatch!(memory::Batch, newBatch::Batch)
-    #
-    # Codigo a desarrollar
-    #
+    
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
