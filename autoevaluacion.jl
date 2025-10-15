@@ -17,7 +17,7 @@ Pkg.status("MLJ")
 
 
 # Para la correcta ejecución de este archivo, los datasets estarán en la siguiente carpeta:
-datasetFolder = "../datasets";
+datasetFolder = "C://Users//usuario//Documents//3º_GIA//MAAA-I//datasets";
 # Cambiadla por la carpeta donde tengáis los datasets
 
 @assert(isdir(datasetFolder))

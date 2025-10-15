@@ -8,6 +8,7 @@ using JLD2
 using Images
 using ColorTypes
 using Statistics
+using MLJBase
 
 
 function fileNamesFolder(folderName::String, extension::String)    
@@ -520,12 +521,49 @@ function divideBatches(dataset::Batch, batchSize::Int; shuffleRows::Bool=false)
     return batches
 end;
 
+
 function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
     supportVectors::Batch=( Array{eltype(dataset[1]),2}(undef,0,size(dataset[1],2)) , Array{eltype(dataset[2]),1}(undef,0) ) )
-    #
-    # Codigo a desarrollar
-    #
+
+    batch = joinBatches(supportVectors, dataset)
+    inputs = batchInputs(batch)
+    targets = batchTargets(batch)
+
+    model = SVMClassifier(
+        kernel =
+        kernel=="linear" ? LIBSVM.Kernel.Linear :
+        kernel=="rbf" ? LIBSVM.Kernel.RadialBasis :
+        kernel=="poly" ? LIBSVM.Kernel.Polynomial :
+        kernel=="sigmoid" ? LIBSVM.Kernel.Sigmoid : nothing,
+        cost = Float64(C),
+        gamma = Float64(gamma),
+        degree = Int32( degree),
+        coef0 = Float64(coef0));
+    
+    if model.kernel === nothing
+        error("Kernel no válido. Usa: linear, rbf, poly, sigmoid")
+    end
+        
+    mach = machine(model, MLJ.table(inputs), categorical(targets));
+    MLJBase.fit!(mach)
+
+
+    indicesNewSupportVectors = sort( mach.fitresult[1].SVs.indices ); 
+
+    #Índices de los vectoes de soporte en el dataset de entrenamiento
+    n = size(supportVectors[1], 1)
+    old_sv_indices = []
+    new_sv_indices = []
+
+    old_sv_indices = [idx for idx in indicesNewSupportVectors if idx <= n] 
+    new_sv_indices = [idx - n for idx in indicesNewSupportVectors if idx > n]
+
+    old_sv = selectInstances(supportVectors, old_sv_indices)
+    new_sv = selectInstances(dataset, new_sv_indices)
+    sv_batch = joinBatches(old_sv, new_sv)
+            
+    return (mach, sv_batch, (old_sv_indices, new_sv_indices))
 end;
 
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
