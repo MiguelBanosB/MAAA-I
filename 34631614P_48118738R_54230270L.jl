@@ -545,7 +545,8 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
         error("Kernel no válido. Usa: linear, rbf, poly, sigmoid")
     end
         
-    mach = machine(model, MLJ.table(inputs), categorical(targets));
+    y_bool = categorical(targets .== 1)
+    mach = machine(model, MLJ.table(inputs), y_bool)
     MLJBase.fit!(mach)
 
 
