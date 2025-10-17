@@ -1,3 +1,5 @@
+
+
 # Archivo de pruebas para realizar autoevaluación de algunas funciones de los ejercicios
 
 # Importamos el archivo con las soluciones a los ejercicios
@@ -17,7 +19,7 @@ Pkg.status("MLJ")
 
 
 # Para la correcta ejecución de este archivo, los datasets estarán en la siguiente carpeta:
-datasetFolder = "C://Users//usuario//Documents//3º_GIA//MAAA-I//datasets";
+datasetFolder = "../datasets";
 # Cambiadla por la carpeta donde tengáis los datasets
 
 @assert(isdir(datasetFolder))
@@ -79,8 +81,6 @@ model, newSupportVectors, newSupportVectorIndices = trainSVM( selectInstances(da
 
 model = trainSVM(divideBatches(dataset, 100; shuffleRows=false), "rbf", 10; gamma=4)
 @assert(findall(predict(model, batchInputs(selectInstances(dataset, 1:20)))) == 13:20)
-
-
 
 
 

@@ -474,7 +474,7 @@ end;
 using MLJ, LIBSVM, MLJLIBSVMInterface
 SVMClassifier = MLJ.@load SVC pkg=LIBSVM verbosity=0
 import Main.predict
-predict(model, inputs::AbstractArray) = (outputs = MLJ.predict(model, MLJ.table(inputs)); return levels(outputs)[int(outputs)]; )
+predict(model, inputs::AbstractArray) = (outputs = MLJ.predict(model, MLJ.table(inputs)); return levels(outputs)[int(outputs)]; )
 
 
 using Base.Iterators
@@ -556,8 +556,8 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     old_sv_indices = []
     new_sv_indices = []
 
-    old_sv_indices = [idx for idx in indicesNewSupportVectors if idx <= n] 
-    new_sv_indices = [idx - n for idx in indicesNewSupportVectors if idx > n]
+    old_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .<= n]
+    new_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .> n] .- n
 
     old_sv = selectInstances(supportVectors, old_sv_indices)
     new_sv = selectInstances(dataset, new_sv_indices)
@@ -568,9 +568,16 @@ end;
 
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
+    supportVectors = (Array{Float64,2}(undef, 0, size(batches[1][1], 2)), Array{Float64,1}(undef, 0))
+
+    mach = nothing
+    for b in batches
+        mach, supportVectors, _ = trainSVM(b, kernel, C;
+            degree=degree, gamma=gamma, coef0=coef0,
+            supportVectors=supportVectors)
+    end
+
+    return mach   
 end;
 
 
