@@ -153,6 +153,7 @@ end
     sin_day, cos_day = cyclicalEncoding(day_column)
     other_columns_converted = convert(Matrix{datasetType}, other_columns)
     final_inputs = hcat(sin_day, cos_day, other_columns_converted)
+    final_inputs = datasetType.(final_inputs)
     final_outputs = vec(convert(Matrix{Bool}, outputs))
     return (final_inputs, final_outputs)
 end;
@@ -474,7 +475,7 @@ end;
 using MLJ, LIBSVM, MLJLIBSVMInterface
 SVMClassifier = MLJ.@load SVC pkg=LIBSVM verbosity=0
 import Main.predict
-predict(model, inputs::AbstractArray) = (outputs = MLJ.predict(model, MLJ.table(inputs)); return levels(outputs)[int(outputs)]; )
+predict(model, inputs::AbstractArray) = (outputs = MLJ.predict(model, MLJ.table(inputs)); return levels(outputs)[int(outputs)]; )
 
 
 using Base.Iterators
@@ -599,14 +600,32 @@ function initializeStreamLearningData(datasetFolder::String, windowSize::Int, ba
 end;
 
 function addBatch!(memory::Batch, newBatch::Batch)
+    x_mem, y_mem = memory
+    x_new, y_new = newBatch 
+    N = size(x_mem, 1)
+    n = size(x_new, 1)
     
+    x_mem[1:(N-n),:] .= x_mem[(1+n):N,:]
+    y_mem[1:(N-n)] .= y_mem[(1+n):N]
+    x_mem[(N-n+1):N,:] .= x_new
+    y_mem[(N-n+1):N] .= y_new
+
+    return memory
 end;
 
 function streamLearning_SVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
+    memory, streamBatches = initializeStreamLearningData(datasetFolder, windowSize, batchSize);
+    model, = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0);
+    accuracies = Float64[];
+    for i in streamBatches
+        predictions = predict(model, batchInputs(i))
+        accuracy = mean(predictions .== batchTargets(i))
+        push!(accuracies, accuracy)
+        addBatch!(memory, i)
+        model, = trainSVM(memory, kernel, C; degree=degree, gamma=gamma, coef0=coef0);
+    end
+    return accuracies
 end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
