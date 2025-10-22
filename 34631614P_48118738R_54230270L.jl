@@ -617,28 +617,28 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 end;
 
 function euclideanDistances(dataset::Batch, instance::AbstractArray{<:Real,1})
-    #
-    # Codigo a desarrollar
-    #
+    X = dataset[1]
+    diffs = X .- instance'
+    dists = sqrt.(sum(diffs .^ 2, dims=2))
+    return vec(dists)
 end;
 
 function nearestElements(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    batch_dists = euclideanDistances(dataset, instance)
+    indices = partialsortperm(batch_dists, 1:k)
+    return selectInstances(dataset, indices)
 end;
 
 function predictKNN(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    nearest_batch = nearestElements(dataset, instance, k)
+    targets = batchTargets(nearest_batch)
+    return mode(targets)
 end;
 
 function predictKNN(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int)
-    #
-    # Codigo a desarrollar
-    #
+    predictKnn(dataset, eachrow(instances), k)
 end;
+
 
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
     #
