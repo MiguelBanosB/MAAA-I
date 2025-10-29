@@ -673,13 +673,22 @@ end;
 # ----------------------------------------------------------------------------------------------
 
 function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    batch = nearestElements(dataset, instance, k)
+    batchTargets = batchTargets(batch)
+
+    # Si todos las clases más cercanas son iguales, devolver esa clase
+    if length(unique(batchTargets)) == 1
+        return batchTargets[1]
+    end
+
+    #Si no, entrenar un SVM con esas k instancias y predecir con ese SVM
+    mach, _, _ = trainSVM(batch, "Linear", C)
+    prediction = predict_mode(mach, reshape(instance, 1, :))[1]
+    return prediction
 end;
 
 function predictKNN_SVM(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    # Para un conjunto de instancias 
+    predictKNN_SVM(dataset, eachrow(instances), k, C)
+    
 end;
