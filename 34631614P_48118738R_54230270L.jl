@@ -667,11 +667,11 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
 
         model = new_model
 
-        if length(ages_supportVectors) != batchSize(supportVectors)
+        if length(ages_supportVectors) != size(batchInputs(supportVectors), 1)
             error("ages_supportVectors tiene $(length(ages_supportVectors)) elementos, pero supportVectors tiene $(batchSize(supportVectors)) instancias.")
         end
 
-        if batchSize(supportVectors) == 0
+        if size(batchInputs(supportVectors), 1) == 0
             error("El conjunto de vectores de soporte ha quedado vacío en esta iteración.")
         end
 
