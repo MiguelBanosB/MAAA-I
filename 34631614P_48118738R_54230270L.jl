@@ -630,9 +630,44 @@ end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    #
-    # Codigo a desarrollar
-    #
+    initial_batch, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize);
+    model, supportVectors, (old_sv_indices, indicesSupportVectorsInFirstBatch) = trainSVM(initial_batch, kernel, C;
+        degree=degree, gamma=gamma, coef0=coef0);
+
+    ages = collect(batchSize:-1:1)
+    ages_supportVectors = ages[indicesSupportVectorsInFirstBatch];
+
+    accuracies = Float64[];
+
+    for i in batches
+        predictions = predict(model, batchInputs(i))
+        accuracy = mean(predictions .== batchTargets(i))
+        push!(accuracies, accuracy)
+        
+        N = size(batchInputs(i), 1)
+        ages_supportVectors .+= N
+
+        supportVectors = selectInstances(supportVectors, ages_supportVectors .<= windowSize)
+        ages_supportVectors = ages_supportVectors[ages_supportVectors .<= windowSize]
+
+        prev_supportVectors = supportVectors
+    
+        new_model, supportVectors, (old_sv_indices, indicesSupportVectorsInFirstBatch) = trainSVM(i, kernel, C;
+            degree=degree, gamma=gamma, coef0=coef0,
+            supportVectors=supportVectors);
+
+        first_vector = selectInstances(prev_supportVectors, old_sv_indices)
+        second_vector = selectInstances(i, indicesSupportVectorsInFirstBatch)
+        supportVectors = joinBatches(first_vector, second_vector)
+
+        ages_old = ages_supportVectors[old_sv_indices]
+        ages_batch_desc = collect(N:-1:1)
+        ages_new = ages_batch_desc[indicesSupportVectorsInFirstBatch]
+        ages_supportVectors = vcat(ages_old, ages_new)
+
+        model = new_model
+    end
+    return accuracies
 end;
 
 function euclideanDistances(dataset::Batch, instance::AbstractArray{<:Real,1})
