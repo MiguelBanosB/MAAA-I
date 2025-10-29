@@ -570,7 +570,10 @@ end;
 
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    supportVectors = (Array{Float64,2}(undef, 0, size(batches[1][1], 2)), Array{Float64,1}(undef, 0))
+
+    isempty(batches) && error("El array de batches está vacío.")
+
+    supportVectors = (Array{eltype(batches[1][1]),2}(undef, 0, size(batches[1][1], 2)), Array{eltype(batches[1][2]),1}(undef, 0))
 
     mach = nothing
     for b in batches
