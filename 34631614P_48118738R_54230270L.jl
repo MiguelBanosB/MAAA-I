@@ -703,7 +703,7 @@ function predictKNN(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int)
 end;
 
 function predictKNN(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int)
-    predictKnn(dataset, eachrow(instances), k)
+    [predictKNN(dataset, vec(x), k) for x in eachrow(instances)]
 end;
 
 
