@@ -666,6 +666,19 @@ function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::
         ages_supportVectors = vcat(ages_old, ages_new)
 
         model = new_model
+
+        if length(ages_supportVectors) != batchSize(supportVectors)
+            error("ages_supportVectors tiene $(length(ages_supportVectors)) elementos, pero supportVectors tiene $(batchSize(supportVectors)) instancias.")
+        end
+
+        if batchSize(supportVectors) == 0
+            error("El conjunto de vectores de soporte ha quedado vacío en esta iteración.")
+        end
+
+        if isnothing(model)
+            error("El modelo se ha perdido o no se ha actualizado correctamente en esta iteración.")
+        end
+
     end
     return accuracies
 end;
