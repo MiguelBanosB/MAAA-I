@@ -554,7 +554,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     indicesNewSupportVectors = sort( mach.fitresult[1].SVs.indices ); 
 
     #Índices de los vectoes de soporte en el dataset de entrenamiento
-    n = size(supportVectors[1], 1)
+    n = batchLength(supportVectors)
     old_sv_indices = []
     new_sv_indices = []
 
@@ -573,7 +573,11 @@ function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
 
     isempty(batches) && error("El array de batches está vacío.")
 
-    supportVectors = (Array{eltype(batches[1][1]),2}(undef, 0, size(batches[1][1], 2)), Array{eltype(batches[1][2]),1}(undef, 0))
+    X1 = batchInputs(batches[1])
+    Y1 = batchTargets(batches[1])
+
+    supportVectors = (Array{eltype(X1),2}(undef, 0, size(X1,2)),Array{eltype(Y1),1}(undef, 0)
+    )
 
     mach = nothing
     for b in batches
