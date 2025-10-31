@@ -527,9 +527,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
     supportVectors::Batch=( Array{eltype(dataset[1]),2}(undef,0,size(dataset[1],2)) , Array{eltype(dataset[2]),1}(undef,0) ) )
 
-    batch = joinBatches(supportVectors, dataset)
-    inputs = batchInputs(batch)
-    targets = batchTargets(batch)
+    batch_joined = joinBatches(supportVectors, dataset)
 
     model = SVMClassifier(
         kernel =
@@ -546,18 +544,14 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
         error("Kernel no válido. Usa: linear, rbf, poly, sigmoid")
     end
         
-    y_bool = categorical(targets .== 1)
-    mach = machine(model, MLJ.table(inputs), y_bool)
-    MLJBase.fit!(mach)
+    mach = machine(model, MLJ.table(batchInputs(batch_joined)), categorical(batchTargets(batch_joined)));
+    MLJ.fit!(mach)
 
-
-    indicesNewSupportVectors = sort( mach.fitresult[1].SVs.indices ); 
+    indicesNewSupportVectors = sort(mach.fitresult[1].SVs.indices); 
 
     #Índices de los vectoes de soporte en el dataset de entrenamiento
     n = batchLength(supportVectors)
-    old_sv_indices = []
-    new_sv_indices = []
-
+   
     old_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .<= n]
     new_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .> n] .- n
 
@@ -571,26 +565,20 @@ end;
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
 
-    isempty(batches) && error("El array de batches está vacío.")
-
     X1 = batchInputs(batches[1])
     Y1 = batchTargets(batches[1])
 
-    supportVectors = (Array{eltype(X1),2}(undef, 0, size(X1,2)),Array{eltype(Y1),1}(undef, 0)
-    )
+    supportVectors = (Array{eltype(X1),2}(undef, 0, size(X1,2)),Array{eltype(Y1),1}(undef, 0))
 
-    mach = nothing
+    final_mach = nothing
     for b in batches
-        mach, supportVectors, _ = trainSVM(b, kernel, C;
+        final_mach, supportVectors, _ = trainSVM(b, kernel, C;
             degree=degree, gamma=gamma, coef0=coef0,
             supportVectors=supportVectors)
     end
 
-    return mach   
+    return final_mach   
 end;
-
-
-
 
 
 # ----------------------------------------------------------------------------------------------
