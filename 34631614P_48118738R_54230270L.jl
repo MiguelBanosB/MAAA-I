@@ -527,9 +527,7 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.,
     supportVectors::Batch=( Array{eltype(dataset[1]),2}(undef,0,size(dataset[1],2)) , Array{eltype(dataset[2]),1}(undef,0) ) )
 
-    batch = joinBatches(supportVectors, dataset)
-    inputs = batchInputs(batch)
-    targets = batchTargets(batch)
+    batch_joined = joinBatches(supportVectors, dataset)
 
     model = SVMClassifier(
         kernel =
@@ -546,18 +544,14 @@ function trainSVM(dataset::Batch, kernel::String, C::Real;
         error("Kernel no válido. Usa: linear, rbf, poly, sigmoid")
     end
         
-    y_bool = categorical(targets .== 1)
-    mach = machine(model, MLJ.table(inputs), y_bool)
-    MLJBase.fit!(mach)
+    mach = machine(model, MLJ.table(batchInputs(batch_joined)), categorical(batchTargets(batch_joined)));
+    MLJ.fit!(mach)
 
-
-    indicesNewSupportVectors = sort( mach.fitresult[1].SVs.indices ); 
+    indicesNewSupportVectors = sort(mach.fitresult[1].SVs.indices); 
 
     #Índices de los vectoes de soporte en el dataset de entrenamiento
-    n = size(supportVectors[1], 1)
-    old_sv_indices = []
-    new_sv_indices = []
-
+    n = batchLength(supportVectors)
+   
     old_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .<= n]
     new_sv_indices = indicesNewSupportVectors[indicesNewSupportVectors .> n] .- n
 
@@ -570,20 +564,21 @@ end;
 
 function trainSVM(batches::AbstractArray{<:Batch,1}, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    supportVectors = (Array{Float64,2}(undef, 0, size(batches[1][1], 2)), Array{Float64,1}(undef, 0))
 
-    mach = nothing
+    X1 = batchInputs(batches[1])
+    Y1 = batchTargets(batches[1])
+
+    supportVectors = (Array{eltype(X1),2}(undef, 0, size(X1,2)),Array{eltype(Y1),1}(undef, 0))
+
+    final_mach = nothing
     for b in batches
-        mach, supportVectors, _ = trainSVM(b, kernel, C;
+        final_mach, supportVectors, _ = trainSVM(b, kernel, C;
             degree=degree, gamma=gamma, coef0=coef0,
             supportVectors=supportVectors)
     end
 
-    return mach   
+    return final_mach   
 end;
-
-
-
 
 
 # ----------------------------------------------------------------------------------------------
@@ -630,44 +625,9 @@ end;
 
 function streamLearning_ISVM(datasetFolder::String, windowSize::Int, batchSize::Int, kernel::String, C::Real;
     degree::Real=1, gamma::Real=2, coef0::Real=0.)
-    initial_batch, batches = initializeStreamLearningData(datasetFolder, batchSize, batchSize);
-    model, supportVectors, (old_sv_indices, indicesSupportVectorsInFirstBatch) = trainSVM(initial_batch, kernel, C;
-        degree=degree, gamma=gamma, coef0=coef0);
-
-    ages = collect(batchSize:-1:1)
-    ages_supportVectors = ages[indicesSupportVectorsInFirstBatch];
-
-    accuracies = Float64[];
-
-    for i in batches
-        predictions = predict(model, batchInputs(i))
-        accuracy = mean(predictions .== batchTargets(i))
-        push!(accuracies, accuracy)
-        
-        N = size(batchInputs(i), 1)
-        ages_supportVectors .+= N
-
-        supportVectors = selectInstances(supportVectors, ages_supportVectors .<= windowSize)
-        ages_supportVectors = ages_supportVectors[ages_supportVectors .<= windowSize]
-
-        prev_supportVectors = supportVectors
-    
-        new_model, supportVectors, (old_sv_indices, indicesSupportVectorsInFirstBatch) = trainSVM(i, kernel, C;
-            degree=degree, gamma=gamma, coef0=coef0,
-            supportVectors=supportVectors);
-
-        first_vector = selectInstances(prev_supportVectors, old_sv_indices)
-        second_vector = selectInstances(i, indicesSupportVectorsInFirstBatch)
-        supportVectors = joinBatches(first_vector, second_vector)
-
-        ages_old = ages_supportVectors[old_sv_indices]
-        ages_batch_desc = collect(N:-1:1)
-        ages_new = ages_batch_desc[indicesSupportVectorsInFirstBatch]
-        ages_supportVectors = vcat(ages_old, ages_new)
-
-        model = new_model
-    end
-    return accuracies
+    #
+    # Codigo a desarrollar
+    #
 end;
 
 function euclideanDistances(dataset::Batch, instance::AbstractArray{<:Real,1})
@@ -690,15 +650,23 @@ function predictKNN(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int)
 end;
 
 function predictKNN(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int)
-    predictKnn(dataset, eachrow(instances), k)
+    [predictKNN(dataset, vec(x), k) for x in eachrow(instances)]
 end;
 
 
 function streamLearning_KNN(datasetFolder::String, windowSize::Int, batchSize::Int, k::Int)
-    #
-    # Codigo a desarrollar
-    #
-end;
+    memory, streamBatches = initializeStreamLearningData(datasetFolder, windowSize, batchSize)
+    accuracies = Float64[]
+    for batch in streamBatches
+        inputs = batchInputs(batch)
+        targets = batchTargets(batch)
+        predictions = predictKNN(memory, inputs, k)
+        accuracy = mean(predictions .== targets)
+        push!(accuracies, accuracy)
+        addBatch!(memory, batch)
+    end
+    return accuracies
+end
 
 
 
@@ -708,13 +676,22 @@ end;
 # ----------------------------------------------------------------------------------------------
 
 function predictKNN_SVM(dataset::Batch, instance::AbstractArray{<:Real,1}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    batch = nearestElements(dataset, instance, k)
+    batch_targets = batchTargets(batch)
+
+    # Si todos las clases más cercanas son iguales, devolver esa clase
+    if length(unique(batch_targets)) == 1
+        return batch_targets[1]
+    end
+
+    #Si no, entrenar un SVM con esas k instancias y predecir con ese SVM
+    mach, _, _ = trainSVM(batch, "linear", C)
+    prediction = predict(mach, reshape(instance, 1, :))[1]
+    return prediction
 end;
 
 function predictKNN_SVM(dataset::Batch, instances::AbstractArray{<:Real,2}, k::Int, C::Real)
-    #
-    # Codigo a desarrollar
-    #
+    # Para un conjunto de instancias 
+    [predictKNN_SVM(dataset, vec(x), k, C) for x in eachrow(instances)]
+    
 end;
