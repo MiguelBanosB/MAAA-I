@@ -17,7 +17,7 @@ function MMI.transform(model::MyMinMaxScaler, cache, X)
     Xmat = MMI.matrix(X)
     ranges = cache.maxs .- cache.mins
     ranges[ranges .== 0] .= 1
-    return MMI.table((Xmat .- cache.mins) ./ ranges)
+    return MMI.table((Xmat .- cache.mins') ./ ranges')
 end
 
 
@@ -39,15 +39,46 @@ end
 MMI.transform(m::MyANOVAFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- PEARSON --
-struct MyPearsonFilter <: MMI.Supervised; n_features::Int; end
-MyPearsonFilter(; n_features::Int=100) = MyPearsonFilter(n_features)
+mutable struct MyPearsonFilter <: MMI.Supervised
+    n_features::Int
+    redundancy_threshold::Float64
+end
+MyPearsonFilter(; n_features::Int=100, redundancy_threshold=0.9) = MyPearsonFilter(n_features, redundancy_threshold)
 
 function MMI.fit(model::MyPearsonFilter, verbosity::Int, X, y)
     Xmat = MMI.matrix(X)
+    n_features = size(Xmat, 2)
+    # Convertimos y a float
     y_float = Float64.(_y_to_int(coerce(y, Multiclass)))
-    scores = [abs(cor(view(Xmat, :, j), y_float)) for j in 1:size(Xmat, 2)]
-    selected = _select_top_features(scores, model.n_features)
-    return (selected=selected, scores=scores), nothing
+    
+    # Calcular correlación de cada feature con la clase 
+    corr_with_y = [abs(cor(view(Xmat, :, j), y_float)) for j in 1:n_features]
+    
+    # Ordenar candidatas de mejor a peor
+    order = sortperm(corr_with_y, rev=true)
+    
+    # Selección evitando redundancia
+    selected = Int[]
+    
+    for j in order
+        if length(selected) >= model.n_features break end
+        
+        is_redundant = false
+        # Comparamos la candidata 'j' con las que ya hemos seleccionado 's'
+        for s in selected
+            # Si se parecen mucho entre ellas (correlación > umbral), la descartamos
+            if abs(cor(view(Xmat, :, j), view(Xmat, :, s))) > model.redundancy_threshold
+                is_redundant = true
+                break
+            end
+        end
+        
+        if !is_redundant
+            push!(selected, j)
+        end
+    end
+    
+    return (selected=selected, scores=corr_with_y), nothing
 end
 MMI.transform(m::MyPearsonFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
@@ -96,19 +127,43 @@ MyRFEFilter(; n_features::Int=100) = MyRFEFilter(n_features)
 
 function MMI.fit(model::MyRFEFilter, verbosity::Int, X, y)
     Xmat = MMI.matrix(X)
-    y_float = Float64.(_y_to_int(coerce(y, Multiclass)))
     n, p = size(Xmat)
-    original_indices = collect(1:p)
-    while length(original_indices) > model.n_features
-        Xi = Xmat[:, original_indices]
-        w = Xi \ y_float 
-        importance = abs.(w)
-        n_remaining = length(original_indices)
-        n_to_remove = max(1, ceil(Int, n_remaining * 0.5))
-        idx_sorted = sortperm(importance)
-        deleteat!(original_indices, idx_sorted[1:n_to_remove])
+    
+    # Índices vivos
+    current_indices = collect(1:p)
+    
+    while length(current_indices) > model.n_features
+        # Extraemos datos actuales
+        X_curr = Xmat[:, current_indices]
+        
+        # Entrenamos Regresión Logística
+        # Ajustamos lambda=0 para que sea estándar
+        clf = LogisticClassifier(lambda=0.0, fit_intercept=false) 
+        mach = machine(clf, MMI.table(X_curr), y) # LogReg pide tabla
+        MLJ.fit!(mach, verbosity=0)
+        
+        # Obtenemos coeficientes
+        # MLJLinearModels devuelve vector de pares o vector directo dependiendo versión
+        # Usamos abs de los parámetros ajustados
+        fp = fitted_params(mach)
+        # A veces los coeficientes vienen en una estructura compleja, simplificamos:
+        coefs = fp.coefs 
+        if coefs isa Vector{<:Pair}
+             importance = abs.([c.second for c in coefs])
+        else
+             importance = abs.(coefs)
+        end
+
+        # Eliminamos el 50% peor
+        n_current = length(current_indices)
+        n_keep = max(model.n_features, floor(Int, n_current * 0.5))
+        
+        # Nos quedamos con los mejores
+        top_k_local = sortperm(importance, rev=true)[1:n_keep]
+        current_indices = current_indices[top_k_local]
     end
-    return (selected=original_indices, scores=zeros(p)), nothing
+    
+    return (selected=sort(current_indices), scores=zeros(p)), nothing
 end
 MMI.transform(m::MyRFEFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 

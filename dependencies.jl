@@ -25,6 +25,7 @@ import LIBSVM                 # SVM
 using Flux
 import MLJFlux
 
+using MLJLinearModels # Necesario para LogisticClassifier
 
 # Constantes Globales
 const SEED = 104                   # Semilla fijada según el enunciado para reproducibilidad
@@ -32,6 +33,7 @@ const DATA_PATH = "Datos Práctica" # Ruta relativa a la carpeta de datos
 
 
 # Carga de Wrappers
+LogisticClassifier = MLJ.@load LogisticClassifier pkg=MLJLinearModels verbosity=0
 PCA = MLJ.@load PCA pkg=MultivariateStats verbosity=0
 ICA = MLJ.@load ICA pkg=MultivariateStats verbosity=0
 LDA = MLJ.@load LDA pkg=MultivariateStats verbosity=0
