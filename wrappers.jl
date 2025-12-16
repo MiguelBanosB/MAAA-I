@@ -1,5 +1,5 @@
-# wrappers.jl CORREGIDO
-println("Cargando wrappers y pipeline manual (Versión Robusta)...")
+# wrappers.jl
+include("dependencies.jl")
 
 # ==============================================================================
 # 1. SCALER
@@ -20,12 +20,10 @@ function MMI.transform(model::MyMinMaxScaler, cache, X)
     return (Xmat .- cache.mins) ./ ranges
 end
 
-# ==============================================================================
-# 2. FILTROS (Sin cambios en la lógica, solo en la definición)
-# ==============================================================================
 
-# Helper para filtros: Fit y Transform genéricos
-# (Mantenemos tu lógica pero aseguramos que devuelvan matrices limpias)
+# ==============================================================================
+# 2. FILTROS
+# ==============================================================================
 
 # -- ANOVA --
 struct MyANOVAFilter <: MMI.Supervised; n_features::Int; end
@@ -38,7 +36,7 @@ function MMI.fit(model::MyANOVAFilter, verbosity::Int, X, y)
     selected = _select_top_features(scores, model.n_features)
     return (selected=selected, scores=scores), nothing
 end
-MMI.transform(m::MyANOVAFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MyANOVAFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- PEARSON --
 struct MyPearsonFilter <: MMI.Supervised; n_features::Int; end
@@ -51,7 +49,7 @@ function MMI.fit(model::MyPearsonFilter, verbosity::Int, X, y)
     selected = _select_top_features(scores, model.n_features)
     return (selected=selected, scores=scores), nothing
 end
-MMI.transform(m::MyPearsonFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MyPearsonFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- SPEARMAN --
 struct MySpearmanFilter <: MMI.Supervised; n_features::Int; end
@@ -64,7 +62,7 @@ function MMI.fit(model::MySpearmanFilter, verbosity::Int, X, y)
     selected = _select_top_features(scores, model.n_features)
     return (selected=selected, scores=scores), nothing
 end
-MMI.transform(m::MySpearmanFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MySpearmanFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- KENDALL --
 struct MyKendallFilter <: MMI.Supervised; n_features::Int; end
@@ -77,7 +75,7 @@ function MMI.fit(model::MyKendallFilter, verbosity::Int, X, y)
     selected = _select_top_features(scores, model.n_features)
     return (selected=selected, scores=scores), nothing
 end
-MMI.transform(m::MyKendallFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MyKendallFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- MI --
 struct MyMIFilter <: MMI.Supervised; n_features::Int; end
@@ -90,7 +88,7 @@ function MMI.fit(model::MyMIFilter, verbosity::Int, X, y)
     selected = _select_top_features(scores, model.n_features)
     return (selected=selected, scores=scores), nothing
 end
-MMI.transform(m::MyMIFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MyMIFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # -- RFE --
 struct MyRFEFilter <: MMI.Supervised; n_features::Int; end
@@ -112,78 +110,76 @@ function MMI.fit(model::MyRFEFilter, verbosity::Int, X, y)
     end
     return (selected=original_indices, scores=zeros(p)), nothing
 end
-MMI.transform(m::MyRFEFilter, c, X) = MMI.matrix(X)[:, c.selected]
+MMI.transform(m::MyRFEFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 # ==============================================================================
-# 3. TRAITS
+# 3. TRAITS DE NUESTROS FILTROS
 # ==============================================================================
 for T in [MyANOVAFilter, MyPearsonFilter, MySpearmanFilter, MyKendallFilter, MyMIFilter, MyRFEFilter]
-    MMI.input_scitype(::Type{<:T}) = MMI.Table(MMI.ScientificTypes.Continuous)
-    MMI.target_scitype(::Type{<:T}) = AbstractVector{<:MMI.Finite}
+    MMI.input_scitype(::Type{<:T}) = MMI.Table(MMI.ScientificTypes.Continuous) # Como entrada aceptamos tablas con números continuos
+    MMI.target_scitype(::Type{<:T}) = AbstractVector{<:MMI.Finite} # Vector finito de etiquetas (Problema de clasificación)
 end
 
+
 # ==============================================================================
-# 4. MANUAL PIPELINE (VERSIÓN ROBUSTA: MATRIX -> TABLE -> DETERMINISTIC)
+# 4. MODELO PARA EL CASO DE "SIN REDUCCIÓN"
 # ==============================================================================
-# Cambiamos a Deterministic para asegurar que siempre devolvemos etiquetas para Accuracy/F1
-mutable struct ManualPipeline{F, R, M} <: MMI.Deterministic 
-    scaler::MyMinMaxScaler
-    filter::F
-    reduction::R
-    model::M
+struct IdentityTransformer <: MMI.Unsupervised end
+MMI.fit(model::IdentityTransformer, verbosity, X) = nothing, nothing, nothing # Al entrenar, no aprende ni devuelve nada
+MMI.transform(model::IdentityTransformer, fitresult, X) = X # Al recibir X, devolvemos exactamente el mismo X
+
+# Para que MLJ sepa que no cambia el tipo de datos
+MMI.input_scitype(::Type{<:IdentityTransformer}) = MMI.Table
+MMI.output_scitype(::Type{<:IdentityTransformer}) = MMI.Table
+
+
+# ==============================================================================
+# 5. WRAPPER LEARNING NETWORK 
+# ==============================================================================
+mutable struct PersonalizedPipeline <: MLJBase.ProbabilisticNetworkComposite
+    scaler::MMI.Model
+    filter::Union{MMI.Model, Nothing}
+    reduction::Union{MMI.Model, Nothing}
+    clf::MMI.Model
 end
 
-function MMI.fit(p::ManualPipeline, verbosity::Int, X, y)
+# Constructor externo para permitir keywords (scaler=..., clf=...)
+function PersonalizedPipeline(; 
+    scaler = MyMinMaxScaler(), 
+    filter = nothing, 
+    reduction = nothing, 
+    clf = KNNClassifier()
+)
+    return PersonalizedPipeline(scaler, filter, reduction, clf)
+end
+
+function MLJBase.prefit(model::PersonalizedPipeline, verbosity, X, y)
+    Xs = source(X)
+    ys = source(y)
+
     # 1. Scaler
-    fr_s, _, _ = MMI.fit(p.scaler, verbosity, X)
-    Xt_mat = MMI.transform(p.scaler, fr_s, X)
-    Xt = MMI.table(Xt_mat) # Convertimos Matriz -> Tabla para el siguiente paso
-    
-    # 2. Filter
-    fr_f, _, _ = MMI.fit(p.filter, verbosity, Xt, y)
-    Xt_mat = MMI.transform(p.filter, fr_f, Xt)
-    Xt = MMI.table(Xt_mat) # Matriz -> Tabla
-    
-    # 3. Reduction
-    fr_r = nothing
-    if !isnothing(p.reduction)
-        fr_r, _, _ = MMI.fit(p.reduction, verbosity, Xt)
-        Xt_red = MMI.transform(p.reduction, fr_r, Xt)
-        # Algunos reducciones devuelven tabla, otras matriz. Aseguramos Tabla.
-        Xt = MMI.table(MMI.matrix(Xt_red)) 
-    end
-    
-    # 4. Model
-    fr_m, _, _ = MMI.fit(p.model, verbosity, Xt, y)
-    
-    return (fr_s, fr_f, fr_r, fr_m), nothing, nothing
-end
+    m_scaler = machine(:scaler, Xs)
+    X_curr = MLJ.transform(m_scaler, Xs)
 
-function MMI.predict(p::ManualPipeline, fitresult, Xnew)
-    fr_s, fr_f, fr_r, fr_m = fitresult
-    
-    # Aplicamos transformaciones asegurando formato Tabla
-    Xt_mat = MMI.transform(p.scaler, fr_s, Xnew)
-    Xt = MMI.table(Xt_mat)
-    
-    Xt_mat = MMI.transform(p.filter, fr_f, Xt)
-    Xt = MMI.table(Xt_mat)
-    
-    if !isnothing(p.reduction)
-        Xt_red = MMI.transform(p.reduction, fr_r, Xt)
-        Xt = MMI.table(MMI.matrix(Xt_red))
+    # 2. Filtro (Supervisado)
+    if model.filter !== nothing
+        m_filter = machine(:filter, X_curr, ys)
+        X_curr = MLJ.transform(m_filter, X_curr)
     end
-    
-    # Predicción FINAL
-    # Si el modelo es probabilístico (KNN, MLP), pedimos la MODA (Etiqueta)
-    if MMI.prediction_type(p.model) == :probabilistic
-        return MMI.predict_mode(p.model, fr_m, Xt)
-    else
-        # Si es determinista (SVM), pedimos la predicción directa
-        return MMI.predict(p.model, fr_m, Xt)
-    end
-end
 
-# Traits del Pipeline
-MMI.input_scitype(::Type{<:ManualPipeline}) = MMI.Table(MMI.ScientificTypes.Continuous)
-MMI.target_scitype(::Type{<:ManualPipeline}) = AbstractVector{<:MMI.Finite}
+    # 3. Reducción
+    if model.reduction !== nothing
+        if MLJ.is_supervised(model.reduction)
+            m_red = machine(:reduction, X_curr, ys) # LDA (Supervisada)
+        else
+            m_red = machine(:reduction, X_curr)     # PCA / ICA
+        end
+        X_curr = MLJ.transform(m_red, X_curr)
+    end
+
+    # 4. Clasificador
+    m_clf = machine(:clf, X_curr, ys)
+    yhat  = MLJ.predict(m_clf, X_curr)
+
+    return (predict=yhat,)
+end

@@ -37,5 +37,5 @@ ICA = MLJ.@load ICA pkg=MultivariateStats verbosity=0
 LDA = MLJ.@load LDA pkg=MultivariateStats verbosity=0
 
 KNNClassifier = MLJ.@load KNNClassifier pkg=NearestNeighborModels verbosity=0
-SVC = MLJ.@load SVC pkg=LIBSVM verbosity=0
+ProbabilisticSVC = MLJ.@load ProbabilisticSVC pkg=LIBSVM verbosity=0
 NeuralNetworkClassifier = MLJ.@load NeuralNetworkClassifier pkg=MLJFlux verbosity=0
