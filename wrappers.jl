@@ -17,7 +17,7 @@ function MMI.transform(model::MyMinMaxScaler, cache, X)
     Xmat = MMI.matrix(X)
     ranges = cache.maxs .- cache.mins
     ranges[ranges .== 0] .= 1
-    return (Xmat .- cache.mins) ./ ranges
+    return MMI.table((Xmat .- cache.mins) ./ ranges)
 end
 
 
