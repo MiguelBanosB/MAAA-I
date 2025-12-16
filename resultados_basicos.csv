@@ -1,0 +1,217 @@
+Filter,Reduction,Model,Accuracy,F1_Score
+MI,ICA,NeuralNetwork_100,NaN,NaN
+MI,ICA,KNN_10,NaN,NaN
+MI,ICA,KNN_20,NaN,NaN
+MI,ICA,NeuralNetwork_50,NaN,NaN
+MI,ICA,NeuralNetwork_100_50,NaN,NaN
+MI,ICA,SVM_0.1,NaN,NaN
+MI,ICA,KNN_1,NaN,NaN
+MI,ICA,SVM_0.5,NaN,NaN
+MI,ICA,SVM_1,NaN,NaN
+MI,PCA,NeuralNetwork_100,NaN,NaN
+MI,PCA,KNN_10,NaN,NaN
+MI,PCA,KNN_20,NaN,NaN
+MI,PCA,NeuralNetwork_50,NaN,NaN
+MI,PCA,NeuralNetwork_100_50,NaN,NaN
+MI,PCA,SVM_0.1,NaN,NaN
+MI,PCA,KNN_1,NaN,NaN
+MI,PCA,SVM_0.5,NaN,NaN
+MI,PCA,SVM_1,NaN,NaN
+MI,LDA,NeuralNetwork_100,NaN,NaN
+MI,LDA,KNN_10,NaN,NaN
+MI,LDA,KNN_20,NaN,NaN
+MI,LDA,NeuralNetwork_50,NaN,NaN
+MI,LDA,NeuralNetwork_100_50,NaN,NaN
+MI,LDA,SVM_0.1,NaN,NaN
+MI,LDA,KNN_1,NaN,NaN
+MI,LDA,SVM_0.5,NaN,NaN
+MI,LDA,SVM_1,NaN,NaN
+MI,Sin reducción,NeuralNetwork_100,NaN,NaN
+MI,Sin reducción,KNN_10,NaN,NaN
+MI,Sin reducción,KNN_20,NaN,NaN
+MI,Sin reducción,NeuralNetwork_50,NaN,NaN
+MI,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+MI,Sin reducción,SVM_0.1,NaN,NaN
+MI,Sin reducción,KNN_1,NaN,NaN
+MI,Sin reducción,SVM_0.5,NaN,NaN
+MI,Sin reducción,SVM_1,NaN,NaN
+ANOVA,ICA,NeuralNetwork_100,NaN,NaN
+ANOVA,ICA,KNN_10,NaN,NaN
+ANOVA,ICA,KNN_20,NaN,NaN
+ANOVA,ICA,NeuralNetwork_50,NaN,NaN
+ANOVA,ICA,NeuralNetwork_100_50,NaN,NaN
+ANOVA,ICA,SVM_0.1,NaN,NaN
+ANOVA,ICA,KNN_1,NaN,NaN
+ANOVA,ICA,SVM_0.5,NaN,NaN
+ANOVA,ICA,SVM_1,NaN,NaN
+ANOVA,PCA,NeuralNetwork_100,NaN,NaN
+ANOVA,PCA,KNN_10,NaN,NaN
+ANOVA,PCA,KNN_20,NaN,NaN
+ANOVA,PCA,NeuralNetwork_50,NaN,NaN
+ANOVA,PCA,NeuralNetwork_100_50,NaN,NaN
+ANOVA,PCA,SVM_0.1,NaN,NaN
+ANOVA,PCA,KNN_1,NaN,NaN
+ANOVA,PCA,SVM_0.5,NaN,NaN
+ANOVA,PCA,SVM_1,NaN,NaN
+ANOVA,LDA,NeuralNetwork_100,NaN,NaN
+ANOVA,LDA,KNN_10,NaN,NaN
+ANOVA,LDA,KNN_20,NaN,NaN
+ANOVA,LDA,NeuralNetwork_50,NaN,NaN
+ANOVA,LDA,NeuralNetwork_100_50,NaN,NaN
+ANOVA,LDA,SVM_0.1,NaN,NaN
+ANOVA,LDA,KNN_1,NaN,NaN
+ANOVA,LDA,SVM_0.5,NaN,NaN
+ANOVA,LDA,SVM_1,NaN,NaN
+ANOVA,Sin reducción,NeuralNetwork_100,NaN,NaN
+ANOVA,Sin reducción,KNN_10,NaN,NaN
+ANOVA,Sin reducción,KNN_20,NaN,NaN
+ANOVA,Sin reducción,NeuralNetwork_50,NaN,NaN
+ANOVA,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+ANOVA,Sin reducción,SVM_0.1,NaN,NaN
+ANOVA,Sin reducción,KNN_1,NaN,NaN
+ANOVA,Sin reducción,SVM_0.5,NaN,NaN
+ANOVA,Sin reducción,SVM_1,NaN,NaN
+Pearson,ICA,NeuralNetwork_100,NaN,NaN
+Pearson,ICA,KNN_10,NaN,NaN
+Pearson,ICA,KNN_20,NaN,NaN
+Pearson,ICA,NeuralNetwork_50,NaN,NaN
+Pearson,ICA,NeuralNetwork_100_50,NaN,NaN
+Pearson,ICA,SVM_0.1,NaN,NaN
+Pearson,ICA,KNN_1,NaN,NaN
+Pearson,ICA,SVM_0.5,NaN,NaN
+Pearson,ICA,SVM_1,NaN,NaN
+Pearson,PCA,NeuralNetwork_100,NaN,NaN
+Pearson,PCA,KNN_10,NaN,NaN
+Pearson,PCA,KNN_20,NaN,NaN
+Pearson,PCA,NeuralNetwork_50,NaN,NaN
+Pearson,PCA,NeuralNetwork_100_50,NaN,NaN
+Pearson,PCA,SVM_0.1,NaN,NaN
+Pearson,PCA,KNN_1,NaN,NaN
+Pearson,PCA,SVM_0.5,NaN,NaN
+Pearson,PCA,SVM_1,NaN,NaN
+Pearson,LDA,NeuralNetwork_100,NaN,NaN
+Pearson,LDA,KNN_10,NaN,NaN
+Pearson,LDA,KNN_20,NaN,NaN
+Pearson,LDA,NeuralNetwork_50,NaN,NaN
+Pearson,LDA,NeuralNetwork_100_50,NaN,NaN
+Pearson,LDA,SVM_0.1,NaN,NaN
+Pearson,LDA,KNN_1,NaN,NaN
+Pearson,LDA,SVM_0.5,NaN,NaN
+Pearson,LDA,SVM_1,NaN,NaN
+Pearson,Sin reducción,NeuralNetwork_100,NaN,NaN
+Pearson,Sin reducción,KNN_10,NaN,NaN
+Pearson,Sin reducción,KNN_20,NaN,NaN
+Pearson,Sin reducción,NeuralNetwork_50,NaN,NaN
+Pearson,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+Pearson,Sin reducción,SVM_0.1,NaN,NaN
+Pearson,Sin reducción,KNN_1,NaN,NaN
+Pearson,Sin reducción,SVM_0.5,NaN,NaN
+Pearson,Sin reducción,SVM_1,NaN,NaN
+RFE,ICA,NeuralNetwork_100,NaN,NaN
+RFE,ICA,KNN_10,NaN,NaN
+RFE,ICA,KNN_20,NaN,NaN
+RFE,ICA,NeuralNetwork_50,NaN,NaN
+RFE,ICA,NeuralNetwork_100_50,NaN,NaN
+RFE,ICA,SVM_0.1,NaN,NaN
+RFE,ICA,KNN_1,NaN,NaN
+RFE,ICA,SVM_0.5,NaN,NaN
+RFE,ICA,SVM_1,NaN,NaN
+RFE,PCA,NeuralNetwork_100,NaN,NaN
+RFE,PCA,KNN_10,NaN,NaN
+RFE,PCA,KNN_20,NaN,NaN
+RFE,PCA,NeuralNetwork_50,NaN,NaN
+RFE,PCA,NeuralNetwork_100_50,NaN,NaN
+RFE,PCA,SVM_0.1,NaN,NaN
+RFE,PCA,KNN_1,NaN,NaN
+RFE,PCA,SVM_0.5,NaN,NaN
+RFE,PCA,SVM_1,NaN,NaN
+RFE,LDA,NeuralNetwork_100,NaN,NaN
+RFE,LDA,KNN_10,NaN,NaN
+RFE,LDA,KNN_20,NaN,NaN
+RFE,LDA,NeuralNetwork_50,NaN,NaN
+RFE,LDA,NeuralNetwork_100_50,NaN,NaN
+RFE,LDA,SVM_0.1,NaN,NaN
+RFE,LDA,KNN_1,NaN,NaN
+RFE,LDA,SVM_0.5,NaN,NaN
+RFE,LDA,SVM_1,NaN,NaN
+RFE,Sin reducción,NeuralNetwork_100,NaN,NaN
+RFE,Sin reducción,KNN_10,NaN,NaN
+RFE,Sin reducción,KNN_20,NaN,NaN
+RFE,Sin reducción,NeuralNetwork_50,NaN,NaN
+RFE,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+RFE,Sin reducción,SVM_0.1,NaN,NaN
+RFE,Sin reducción,KNN_1,NaN,NaN
+RFE,Sin reducción,SVM_0.5,NaN,NaN
+RFE,Sin reducción,SVM_1,NaN,NaN
+Kendall,ICA,NeuralNetwork_100,NaN,NaN
+Kendall,ICA,KNN_10,NaN,NaN
+Kendall,ICA,KNN_20,NaN,NaN
+Kendall,ICA,NeuralNetwork_50,NaN,NaN
+Kendall,ICA,NeuralNetwork_100_50,NaN,NaN
+Kendall,ICA,SVM_0.1,NaN,NaN
+Kendall,ICA,KNN_1,NaN,NaN
+Kendall,ICA,SVM_0.5,NaN,NaN
+Kendall,ICA,SVM_1,NaN,NaN
+Kendall,PCA,NeuralNetwork_100,NaN,NaN
+Kendall,PCA,KNN_10,NaN,NaN
+Kendall,PCA,KNN_20,NaN,NaN
+Kendall,PCA,NeuralNetwork_50,NaN,NaN
+Kendall,PCA,NeuralNetwork_100_50,NaN,NaN
+Kendall,PCA,SVM_0.1,NaN,NaN
+Kendall,PCA,KNN_1,NaN,NaN
+Kendall,PCA,SVM_0.5,NaN,NaN
+Kendall,PCA,SVM_1,NaN,NaN
+Kendall,LDA,NeuralNetwork_100,NaN,NaN
+Kendall,LDA,KNN_10,NaN,NaN
+Kendall,LDA,KNN_20,NaN,NaN
+Kendall,LDA,NeuralNetwork_50,NaN,NaN
+Kendall,LDA,NeuralNetwork_100_50,NaN,NaN
+Kendall,LDA,SVM_0.1,NaN,NaN
+Kendall,LDA,KNN_1,NaN,NaN
+Kendall,LDA,SVM_0.5,NaN,NaN
+Kendall,LDA,SVM_1,NaN,NaN
+Kendall,Sin reducción,NeuralNetwork_100,NaN,NaN
+Kendall,Sin reducción,KNN_10,NaN,NaN
+Kendall,Sin reducción,KNN_20,NaN,NaN
+Kendall,Sin reducción,NeuralNetwork_50,NaN,NaN
+Kendall,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+Kendall,Sin reducción,SVM_0.1,NaN,NaN
+Kendall,Sin reducción,KNN_1,NaN,NaN
+Kendall,Sin reducción,SVM_0.5,NaN,NaN
+Kendall,Sin reducción,SVM_1,NaN,NaN
+Spearman,ICA,NeuralNetwork_100,NaN,NaN
+Spearman,ICA,KNN_10,NaN,NaN
+Spearman,ICA,KNN_20,NaN,NaN
+Spearman,ICA,NeuralNetwork_50,NaN,NaN
+Spearman,ICA,NeuralNetwork_100_50,NaN,NaN
+Spearman,ICA,SVM_0.1,NaN,NaN
+Spearman,ICA,KNN_1,NaN,NaN
+Spearman,ICA,SVM_0.5,NaN,NaN
+Spearman,ICA,SVM_1,NaN,NaN
+Spearman,PCA,NeuralNetwork_100,NaN,NaN
+Spearman,PCA,KNN_10,NaN,NaN
+Spearman,PCA,KNN_20,NaN,NaN
+Spearman,PCA,NeuralNetwork_50,NaN,NaN
+Spearman,PCA,NeuralNetwork_100_50,NaN,NaN
+Spearman,PCA,SVM_0.1,NaN,NaN
+Spearman,PCA,KNN_1,NaN,NaN
+Spearman,PCA,SVM_0.5,NaN,NaN
+Spearman,PCA,SVM_1,NaN,NaN
+Spearman,LDA,NeuralNetwork_100,NaN,NaN
+Spearman,LDA,KNN_10,NaN,NaN
+Spearman,LDA,KNN_20,NaN,NaN
+Spearman,LDA,NeuralNetwork_50,NaN,NaN
+Spearman,LDA,NeuralNetwork_100_50,NaN,NaN
+Spearman,LDA,SVM_0.1,NaN,NaN
+Spearman,LDA,KNN_1,NaN,NaN
+Spearman,LDA,SVM_0.5,NaN,NaN
+Spearman,LDA,SVM_1,NaN,NaN
+Spearman,Sin reducción,NeuralNetwork_100,NaN,NaN
+Spearman,Sin reducción,KNN_10,NaN,NaN
+Spearman,Sin reducción,KNN_20,NaN,NaN
+Spearman,Sin reducción,NeuralNetwork_50,NaN,NaN
+Spearman,Sin reducción,NeuralNetwork_100_50,NaN,NaN
+Spearman,Sin reducción,SVM_0.1,NaN,NaN
+Spearman,Sin reducción,KNN_1,NaN,NaN
+Spearman,Sin reducción,SVM_0.5,NaN,NaN
+Spearman,Sin reducción,SVM_1,NaN,NaN
