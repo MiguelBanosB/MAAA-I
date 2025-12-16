@@ -5,6 +5,7 @@ using CSV               # Para leer archivos .csv
 using DataFrames        # Para manipular tablas de datos
 using Glob              # Para búsqueda de archivos con patrones
 using Statistics        # Funciones estadísticas básicas
+import Statistics: mean, cor, middle, quantile
 using StatsBase         # Funciones estadísticas adicionales
 using Random            # Para generación de números aleatorios y semillas
 using LinearAlgebra     # Operaciones matriciales (necesario para la regresión en RFE)

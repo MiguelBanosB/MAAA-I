@@ -104,3 +104,11 @@ function _select_top_features(scores::AbstractVector{<:Real}, n_features::Int)
     idx_sorted = sortperm(scores, rev=true)
     return idx_sorted[1:n_sel]
 end
+
+# Helper para evitar NaNs al ordenar
+function _get_best_indices(scores::Vector{Float64}, k::Int)
+    scores_clean = map(s -> isnan(s) ? -1.0 : s, scores)
+    p = length(scores)
+    n_select = min(k, p)
+    return sortperm(scores_clean, rev=true)[1:n_select]
+end
