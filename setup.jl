@@ -39,21 +39,17 @@ const N_FEATURES = 561        # Número fijo de atributos del dataset HAR
 
 
 # --- 5. Carga de Modelos ---
-# Clasificadores Lineales y Básicos
 LogisticClassifier      = MLJ.@load LogisticClassifier pkg=MLJLinearModels verbosity=0
 ProbabilisticSVC        = MLJ.@load ProbabilisticSVC pkg=LIBSVM verbosity=0
 KNNClassifier           = MLJ.@load KNNClassifier pkg=NearestNeighborModels verbosity=0
-
-# Redes Neuronales
 NeuralNetworkClassifier = MLJ.@load NeuralNetworkClassifier pkg=MLJFlux verbosity=0
 
-# Árboles y Ensembles Nativos de Julia
 DecisionTreeClassifier  = MLJ.@load DecisionTreeClassifier pkg=DecisionTree verbosity=0
 RandomForestClassifier  = MLJ.@load RandomForestClassifier pkg=DecisionTree verbosity=0
 EvoTreeClassifier       = MLJ.@load EvoTreeClassifier pkg=EvoTrees verbosity=0
+AdaBoostStumpClassifier = MLJ.@load AdaBoostStumpClassifier pkg=DecisionTree verbosity=0
 
 # Modelos vía ScikitLearn (Python)
-AdaBoostClassifier      = MLJ.@load AdaBoostClassifier pkg=MLJScikitLearnInterface verbosity=0
 SKSGDClassifier         = MLJ.@load SGDClassifier pkg=MLJScikitLearnInterface verbosity=0
 
 # Transformaciones de Reducción de Dimensionalidad
