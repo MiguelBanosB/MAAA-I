@@ -129,3 +129,70 @@ function _get_best_indices(scores::Vector{<:Real}, k::Int)
     # Orden descendente (mayor score es mejor)
     return sortperm(scores_clean, rev=true)[1:n_select]
 end
+
+
+# --- 4. Visualizar Matrices de Confusión ---
+function show_cm(dic_matrices; classes=levels(y_trainval))
+    
+    for (nombre_modelo, cm_obj) in dic_matrices
+        # Extraer la matriz numérica
+        matriz = hasproperty(cm_obj, :mat) ? cm_obj.mat : cm_obj
+        
+        # Conteo Bruto (Enteros)
+        matriz_plot = matriz 
+        
+        # Texto tal cual (Int)
+        annotations = [(j, i, text(string(Int(matriz[i, j])), 
+                        8, :black, :center)) 
+                        for i in 1:size(matriz, 1) for j in 1:size(matriz, 2)]
+        titulo = "Confusion Matrix (Conteo):\n$nombre_modelo"
+    
+        # Pintar
+        p = heatmap(
+            classes, classes, matriz_plot,
+            title = titulo,
+            xlabel = "Predicción",
+            ylabel = "Real",
+            color = :blues, 
+            aspect_ratio = 1,
+            yflip = true,
+            xrotation = 45,
+            size = (700, 600)
+        )
+        
+        annotate!(annotations)
+        display(p)
+    end
+end
+
+
+# --- 5. Buscar el mejor modelo de un tipo x ---
+function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_Mean)
+    # Cargar resultados
+    df = CSV.read(csv_path, DataFrame)
+    
+    # Filtrar por el tipo de modelo
+    subset = filter(row -> occursin(tipo_modelo, row.Model), df)
+    
+    if nrow(subset) == 0
+        error("No se encontraron modelos del tipo '$tipo_modelo' en $csv_path")
+    end
+    
+    # Ordenar por la métrica elegida (descendente) y coger el primero
+    sort!(subset, metric, rev=true)
+    best_row = subset[1, :]
+    
+    println("Mejor $tipo_modelo encontrado:")
+    println("Config: $(best_row.Filter) + $(best_row.Reduction) + $(best_row.Model)")
+    println("-> $(metric): $(round(best_row[metric], digits=4))")
+    
+    # Reconstruimos Pipeline
+    pipe = PersonalizedPipeline(
+        scaler    = MyMinMaxScaler(),
+        filter    = all_filtros[best_row.Filter],
+        reduction = all_reducciones[best_row.Reduction],
+        clf       = all_modelos[best_row.Model]
+    )
+    
+    return pipe
+end

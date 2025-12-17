@@ -11,7 +11,8 @@ using Random            # Control de aleatoriedad (semillas)
 using LinearAlgebra     # Operaciones matriciales (necesario para RFE)
 using JLD2              # Persistencia de datos (guardar/cargar variables preprocesadas)
 using PrettyTables      # Visualización estética de tablas en consola
-
+using Plots
+gr()
 
 # --- 2. Núcleo MLJ  ---
 using MLJ               # Framework principal
