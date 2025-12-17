@@ -1,15 +1,15 @@
-# wrappers.jl
-include("dependencies.jl")
-include("helpers.jl")
-
+include("setup.jl")
+include("helpers.jl") 
 
 # ==============================================================================
-# 1. SCALER
+# 1. SCALER 
 # ==============================================================================
+# Wrapper para escalado Min-Max (0 a 1).
 struct MyMinMaxScaler <: MMI.Unsupervised end
 
 function MMI.fit(model::MyMinMaxScaler, verbosity::Int, X)
     Xmat = MMI.matrix(X)
+    # Calcula mínimos y máximos por columna (feature)
     mins = mapslices(minimum, Xmat; dims=1)[1, :]
     maxs = mapslices(maximum, Xmat; dims=1)[1, :]
     return (mins=mins, maxs=maxs), nothing, nothing
@@ -17,6 +17,7 @@ end
 
 function MMI.transform(model::MyMinMaxScaler, cache, X)
     Xmat = MMI.matrix(X)
+    # Evita división por cero si max == min (columna constante)
     ranges = cache.maxs .- cache.mins
     ranges[ranges .== 0] .= 1.0 
     return MMI.table((Xmat .- cache.mins') ./ ranges')
@@ -24,24 +25,31 @@ end
 
 
 # ==============================================================================
-# 2. FILTROS
+# 2. FILTROS DE SELECCIÓN DE CARACTERÍSTICAS
 # ==============================================================================
 
-# -- ANOVA --
-struct MyANOVAFilter <: MMI.Supervised; n_features::Int; end
+# -- ANOVA (F-Test) --
+# Selecciona variables basándose en la varianza entre medias de grupos vs varianza interna.
+struct MyANOVAFilter <: MMI.Supervised
+    n_features::Int
+end
 MyANOVAFilter(; n_features::Int=100) = MyANOVAFilter(n_features)
 
 function MMI.fit(model::MyANOVAFilter, verbosity::Int, X, y)
     Xmat = MMI.matrix(X)
     y_cat = coerce(y, Multiclass)
+    # Calcula F-score para cada columna usando el helper
     scores = [_anova_f_score(view(Xmat, :, j), y_cat) for j in 1:size(Xmat, 2)]
     selected = _get_best_indices(scores, model.n_features)
     return (selected=selected, scores=scores), nothing, nothing
 end
+
+# La transformación es común: recortar la matriz a las columnas seleccionadas
 MMI.transform(m::MyANOVAFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
-# -- PEARSON --
+# -- PEARSON (Correlación Lineal + Eliminación de Redundancia) --
+# Selecciona variables correlacionadas con la clase, penalizando colinealidad entre ellas.
 mutable struct MyPearsonFilter <: MMI.Supervised
     n_features::Int
     redundancy_threshold::Float64
@@ -51,26 +59,33 @@ MyPearsonFilter(; n_features::Int=100, redundancy_threshold=0.9) = MyPearsonFilt
 function MMI.fit(model::MyPearsonFilter, verbosity::Int, X, y)
     Xmat = MMI.matrix(X)
     n_features = size(Xmat, 2)
+    # Convertimos target a float para correlación (asumiendo ordinalidad o binario simple)
     y_float = Float64.(_y_to_int(coerce(y, Multiclass)))
-    
+ 
+    # 1. Calcular relevancia (Correlación Feature vs Target)
     corr_with_y = zeros(Float64, n_features)
     for j in 1:n_features
         c = abs(cor(view(Xmat, :, j), y_float))
         corr_with_y[j] = isnan(c) ? 0.0 : c
     end
     
+    # 2. Selección iterativa con filtro de redundancia
     order = sortperm(corr_with_y, rev=true)
     selected = Int[]
+    
     for j in order
         if length(selected) >= model.n_features break end
+        
         is_redundant = false
+        # Comparamos la candidata 'j' con las ya seleccionadas 's'
         for s in selected
             c_red = abs(cor(view(Xmat, :, j), view(Xmat, :, s)))
             if !isnan(c_red) && c_red > model.redundancy_threshold
                 is_redundant = true
-                break
+                break # Si es redundante con alguna, se descarta
             end
         end
+        
         if !is_redundant push!(selected, j) end
     end
     return (selected=selected, scores=corr_with_y), nothing, nothing
@@ -78,8 +93,11 @@ end
 MMI.transform(m::MyPearsonFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
-# -- SPEARMAN --
-struct MySpearmanFilter <: MMI.Supervised; n_features::Int; end
+# -- SPEARMAN (Correlación de Rango) --
+# Similar a Pearson pero captura relaciones monótonas no lineales.
+struct MySpearmanFilter <: MMI.Supervised
+    n_features::Int
+end
 MySpearmanFilter(; n_features::Int=100) = MySpearmanFilter(n_features)
 
 function MMI.fit(model::MySpearmanFilter, verbosity::Int, X, y)
@@ -98,8 +116,11 @@ end
 MMI.transform(m::MySpearmanFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
-# -- KENDALL --
-struct MyKendallFilter <: MMI.Supervised; n_features::Int; end
+# -- KENDALL (Correlación Tau) --
+# Más robusta para datos pequeños o con muchos empates (ranks).
+struct MyKendallFilter <: MMI.Supervised
+    n_features::Int
+end
 MyKendallFilter(; n_features::Int=100) = MyKendallFilter(n_features)
 
 function MMI.fit(model::MyKendallFilter, verbosity::Int, X, y)
@@ -118,13 +139,17 @@ end
 MMI.transform(m::MyKendallFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
-# -- MUTUAL INFORMATION --
-struct MyMIFilter <: MMI.Supervised; n_features::Int; end
+# -- MUTUAL INFORMATION (Información Mutua) --
+# Captura cualquier tipo de dependencia (lineal o no) basada en entropía.
+struct MyMIFilter <: MMI.Supervised
+    n_features::Int
+end
 MyMIFilter(; n_features::Int=100) = MyMIFilter(n_features)
 
 function MMI.fit(model::MyMIFilter, verbosity::Int, X, y)
     Xmat = MMI.matrix(X)
     y_int = _y_to_int(coerce(y, Multiclass))
+    # Usa el helper _mutual_info discretizando variables continuas
     scores = [_mutual_info(view(Xmat, :, j), y_int) for j in 1:size(Xmat, 2)]
     selected = _get_best_indices(scores, model.n_features)
     return (selected=selected, scores=scores), nothing, nothing
@@ -132,8 +157,11 @@ end
 MMI.transform(m::MyMIFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
-# -- RFE --
-struct MyRFEFilter <: MMI.Supervised; n_features::Int; end
+# -- RFE (Recursive Feature Elimination) --
+# Elimina iterativamente las características menos importantes usando Regresión Logística.
+struct MyRFEFilter <: MMI.Supervised
+    n_features::Int
+end
 MyRFEFilter(; n_features::Int=100) = MyRFEFilter(n_features)
 
 function MMI.fit(model::MyRFEFilter, verbosity::Int, X, y)
@@ -141,8 +169,10 @@ function MMI.fit(model::MyRFEFilter, verbosity::Int, X, y)
     n, p = size(Xmat)
     current_indices = collect(1:p)
     
+    # Bucle de eliminación recursiva
     while length(current_indices) > model.n_features
         X_curr = Xmat[:, current_indices]
+        # Usamos LogisticRegression con regularización L2 (Ridge)
         clf = LogisticClassifier(lambda=0.1, fit_intercept=true) 
         mach = machine(clf, MMI.table(X_curr), y)
         MLJ.fit!(mach, verbosity=0)
@@ -150,31 +180,40 @@ function MMI.fit(model::MyRFEFilter, verbosity::Int, X, y)
         fp = fitted_params(mach)
         coefs = fp.coefs 
         
+        # Calcular importancia absoluta de coeficientes
         if coefs isa Matrix
+            # Caso Multiclase: Suma de valores absolutos por clase
             importance = vec(sum(abs.(coefs), dims=1)) 
         elseif coefs isa Vector && length(coefs) > 0 && coefs[1] isa Pair
+            # Caso MLJLinearModels genérico
             importance = abs.([c.second for c in coefs])
         else
+            # Caso Binario simple
             importance = abs.(coefs)
         end
         
+        # Ajuste de tamaño si hay intercept (a veces devuelve vector +1 long)
         if length(importance) != length(current_indices)
             importance = importance[end-length(current_indices)+1:end]
         end
 
+        # Eliminar el 50% de las peores en cada paso (para velocidad)
         n_current = length(current_indices)
         n_keep = max(model.n_features, floor(Int, n_current * 0.5))
+        
         top_k_local = sortperm(importance, rev=true)[1:n_keep]
         current_indices = current_indices[top_k_local]
     end
+    
     return (selected=sort(current_indices), scores=zeros(p)), nothing, nothing
 end
 MMI.transform(m::MyRFEFilter, c, X) = MMI.table(MMI.matrix(X)[:, c.selected])
 
 
 # ==============================================================================
-# 3. TRAITS 
+# 3. TRAITS (METADATA DE MODELOS)
 # ==============================================================================
+# Define qué tipos de datos aceptan nuestros filtros (Tabla continua -> Target finito)
 for T in [MyANOVAFilter, MyPearsonFilter, MySpearmanFilter, MyKendallFilter, MyMIFilter, MyRFEFilter]
     MMI.input_scitype(::Type{<:T}) = MMI.Table(MMI.ScientificTypes.Continuous)
     MMI.target_scitype(::Type{<:T}) = AbstractVector{<:MMI.Finite}
@@ -184,12 +223,18 @@ end
 # ==============================================================================
 # 4. IDENTITY & PIPELINE
 # ==============================================================================
+
+# -- Transformador Identidad --
+# Se usa para representar "Sin Reducción" o "Sin Filtro" en el pipeline dinámico.
 struct IdentityTransformer <: MMI.Unsupervised end
 MMI.fit(model::IdentityTransformer, verbosity, X) = nothing, nothing, nothing
 MMI.transform(model::IdentityTransformer, fitresult, X) = X
 MMI.input_scitype(::Type{<:IdentityTransformer}) = MMI.Table
 MMI.output_scitype(::Type{<:IdentityTransformer}) = MMI.Table
 
+# -- Pipeline Personalizado (Network Composite) --
+# Permite encadenar Scaler -> Filter -> Reduction -> Classifier dinámicamente.
+# Es necesario porque MLJ.Pipeline estándar es rígido con los tipos (Supervisado vs No Sup).
 mutable struct PersonalizedPipeline <: MLJBase.ProbabilisticNetworkComposite
     scaler::MMI.Model
     filter::Union{MMI.Model, Nothing}
@@ -202,26 +247,31 @@ function PersonalizedPipeline(; scaler=MyMinMaxScaler(), filter=nothing, reducti
 end
 
 function MLJBase.prefit(model::PersonalizedPipeline, verbosity, X, y)
-    Xs = source(X)
-    ys = source(y)
+    Xs = source(X) # Nodo fuente de datos
+    ys = source(y) # Nodo fuente de target
 
+    # 1. Normalización
     m_scaler = machine(:scaler, Xs)
     X_curr = MLJ.transform(m_scaler, Xs)
 
+    # 2. Filtrado (Opcional)
     if model.filter !== nothing
         m_filter = machine(:filter, X_curr, ys)
         X_curr = MLJ.transform(m_filter, X_curr)
     end
 
+    # 3. Reducción de Dimensionalidad (Opcional)
     if model.reduction !== nothing
+        # Detectamos si la reducción necesita el target (LDA) o no (PCA, ICA)
         if MLJ.is_supervised(model.reduction)
-            m_red = machine(:reduction, X_curr, ys)
+            m_red = machine(:reduction, X_curr, ys) # Supervisado (ej. LDA)
         else
-            m_red = machine(:reduction, X_curr)
+            m_red = machine(:reduction, X_curr)     # No Supervisado (ej. PCA)
         end
         X_curr = MLJ.transform(m_red, X_curr)
     end
 
+    # 4. Clasificación Final
     m_clf = machine(:clf, X_curr, ys)
     yhat = MLJ.predict(m_clf, X_curr)
 
