@@ -167,7 +167,7 @@ end
 
 
 # --- 5. Buscar el mejor modelo de un tipo x ---
-function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_Mean)
+function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_mean)
     # Cargar resultados
     df = CSV.read(csv_path, DataFrame)
     
@@ -184,7 +184,7 @@ function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_Me
     
     println("Mejor $tipo_modelo encontrado:")
     println("Config: $(best_row.Filter) + $(best_row.Reduction) + $(best_row.Model)")
-    println("-> $(metric): $(round(best_row[metric], digits=4))")
+    println("-> $(metric): $(round(best_row[metric], digits=4))\n")
     
     # Reconstruimos Pipeline
     pipe = PersonalizedPipeline(
