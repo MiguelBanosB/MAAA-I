@@ -332,3 +332,73 @@ MLJBase.input_scitype(::Type{<:PersonalizedPipeline})  = MLJBase.Table(MLJBase.C
 MLJBase.target_scitype(::Type{<:PersonalizedPipeline}) = AbstractVector{<:Finite}
 MLJBase.is_pure_julia(::Type{<:PersonalizedPipeline})  = true
 MLJBase.supports_weights(::Type{<:PersonalizedPipeline}) = false
+
+
+# ==============================================================================
+# WRAPPER PARA ISOMAP
+# ==============================================================================
+mutable struct MyIsomap <: MMI.Unsupervised
+    n_components::Int
+    k::Int  # número de vecinos
+end
+
+MyIsomap(; n_components::Int=2, k::Int=12) = MyIsomap(n_components, k)
+
+function MMI.fit(model::MyIsomap, verbosity::Int, X)
+    # Isomap tampoco se "entrena" tradicionalmente
+    # Guardamos parámetros
+    cache = (k = model.k,)
+    return cache, nothing, nothing
+end
+
+function MMI.transform(model::MyIsomap, cache, X)
+    Xmat = MMI.matrix(X)
+    
+    # ManifoldLearning espera (features, samples)
+    isomap_result = ManifoldLearning.fit(ManifoldLearning.Isomap, 
+                                         Xmat', 
+                                         maxoutdim=model.n_components, 
+                                         k=cache.k)
+    
+    X_embedded = ManifoldLearning.predict(isomap_result)'
+    
+    return MMI.table(X_embedded)
+end
+
+MMI.input_scitype(::Type{<:MyIsomap}) = MMI.Table(Continuous)
+MMI.output_scitype(::Type{<:MyIsomap}) = MMI.Table(Continuous)
+
+
+# ==============================================================================
+# WRAPPER PARA LLE (Locally Linear Embedding)
+# ==============================================================================
+mutable struct MyLLE <: MMI.Unsupervised
+    n_components::Int
+    k::Int  # número de vecinos
+end
+
+MyLLE(; n_components::Int=2, k::Int=12) = MyLLE(n_components, k)
+
+function MMI.fit(model::MyLLE, verbosity::Int, X)
+    cache = (k = model.k,)
+    return cache, nothing, nothing
+end
+
+function MMI.transform(model::MyLLE, cache, X)
+    Xmat = MMI.matrix(X)
+    
+    # ManifoldLearning espera (features, samples)
+    lle_result = ManifoldLearning.fit(ManifoldLearning.LLE, 
+                                      Xmat', 
+                                      maxoutdim=model.n_components, 
+                                      k=cache.k)
+    
+    X_embedded = ManifoldLearning.predict(lle_result)'
+    
+    return MMI.table(X_embedded)
+end
+
+
+
+MMI.input_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.ScientificTypes.Continuous)
+MMI.output_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.ScientificTypes.Continuous)

@@ -13,6 +13,8 @@ using JLD2              # Persistencia de datos (guardar/cargar variables prepro
 using PrettyTables      # Visualización estética de tablas en consola
 using Plots
 gr()
+using TSne: tsne         # Para t-SNE
+using ManifoldLearning   # Para Isomap y LLE
 
 # --- 2. Núcleo MLJ  ---
 using MLJ               # Framework principal

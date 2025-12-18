@@ -196,3 +196,119 @@ function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_me
     
     return pipe
 end
+
+
+# --- 6. Helpers Visualización ---
+function to_matrix_2d(X)
+    # Caso 1: ya es matriz
+    if X isa AbstractMatrix
+        return X
+    end
+    
+    # Caso 2: es una tabla MLJ
+    try
+        Xm = MMI.matrix(X)
+        if size(Xm, 2) >= 2
+            return Xm[:, 1:2]
+        end
+    catch
+    end
+    
+    # Caso 3: es NamedTuple de columnas
+    if X isa NamedTuple
+        cols = collect(values(X))
+        mat = hcat(cols...)
+        return mat
+    end
+    
+    # Si todo falla:
+    error("No se pudo convertir X a matriz 2D")
+end
+
+
+function plot_2d_projection(train2d, ytrain; 
+                            test2d=nothing, ytest=nothing, 
+                            title_str="Proyección 2D")
+
+    # Convert to matrix if table
+    train_mat = train2d isa AbstractMatrix ? train2d : MMI.matrix(train2d)
+    ytrain_vec = ytrain
+
+    # define colors
+    labels = sort(unique(ytrain_vec))
+    palette = [:blue, :red, :green, :orange, :purple, :cyan]
+
+    p = plot(title=title_str * " - TRAIN",
+             xlabel="Component 1", ylabel="Component 2",
+             legend=:outerright)
+
+    for (i,lab) in enumerate(labels)
+        mask = ytrain_vec .== lab
+        scatter!(p, train_mat[mask,1], train_mat[mask,2],
+                 label=string(lab),
+                 markersize=3,
+                 alpha=0.6,
+                 color=palette[(i-1) % length(palette) + 1])
+    end
+
+    # If test data is provided
+    if test2d !== nothing && ytest !== nothing
+        test_mat = test2d isa AbstractMatrix ? test2d : MMI.matrix(test2d)
+        ytest_vec = ytest
+
+        p2 = plot(title=title_str * " - TEST",
+                 xlabel="Component 1", ylabel="Component 2",
+                 legend=:outerright)
+
+        for (i,lab) in enumerate(labels)
+            mask = ytest_vec .== lab
+            scatter!(p2, test_mat[mask,1], test_mat[mask,2],
+                     label=string(lab),
+                     markersize=3,
+                     alpha=0.6,
+                     color=palette[(i-1) % length(palette) + 1])
+        end
+
+        return plot(p, p2, layout=(2,1), size=(900,1200))
+    end
+
+    return p
+end
+
+
+function calculate_separability(X_2d, y)
+    
+    # Centroide global
+    global_mean = mean(X_2d, dims=1)
+    
+    # Dispersión entre clases (Between-class scatter)
+    Sb = 0.0
+    activities = unique(y)
+    
+    for activity in activities
+        mask = y .== activity
+        X_class = X_2d[mask, :]
+        class_mean = mean(X_class, dims=1)
+        n_class = sum(mask)
+        
+        diff = class_mean .- global_mean
+        Sb += n_class * sum(diff .^ 2)
+    end
+    
+    # Dispersión dentro de clases (Within-class scatter)
+    Sw = 0.0
+    
+    for activity in activities
+        mask = y .== activity
+        X_class = X_2d[mask, :]
+        class_mean = mean(X_class, dims=1)
+        
+        for i in 1:size(X_class, 1)
+            diff = X_class[i:i, :] .- class_mean
+            Sw += sum(diff .^ 2)
+        end
+    end
+    
+    # Ratio de separabilidad
+    return Sb / (Sw + 1e-10)
+end
