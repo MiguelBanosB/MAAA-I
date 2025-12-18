@@ -131,36 +131,45 @@ function _get_best_indices(scores::Vector{<:Real}, k::Int)
 end
 
 
-# --- 4. Visualizar Matrices de Confusión ---
 function show_cm(dic_matrices; classes=levels(y_trainval))
     
     for (nombre_modelo, cm_obj) in dic_matrices
-        # Extraer la matriz numérica
+        # 1. Extraer matriz
         matriz = hasproperty(cm_obj, :mat) ? cm_obj.mat : cm_obj
         
-        # Conteo Bruto (Enteros)
-        matriz_plot = matriz 
+        # 2. Generar anotaciones
+        # --- CORRECCIÓN AQUÍ ---
+        # Envolvemos todo en vec() para que sea una lista plana, no una matriz.
+        annotations = vec([
+            (j, i, text(string(Int(matriz[i, j])), 10, :black, :center)) 
+            for i in 1:size(matriz, 1), j in 1:size(matriz, 2)
+        ])
         
-        # Texto tal cual (Int)
-        annotations = [(j, i, text(string(Int(matriz[i, j])), 
-                        8, :black, :center)) 
-                        for i in 1:size(matriz, 1) for j in 1:size(matriz, 2)]
-        titulo = "Confusion Matrix:\n$nombre_modelo"
+        titulo = "Matriz de Confusión: $nombre_modelo"
     
-        # Pintar
+        # 3. Pintar
         p = heatmap(
-            classes, classes, matriz_plot,
+            classes,    
+            classes,    
+            matriz,   
+            
             title = titulo,
             xlabel = "Predicción",
-            ylabel = "Real",
+            ylabel = "Real (Ground Truth)",
             color = :blues, 
             aspect_ratio = 1,
-            yflip = true,
-            xrotation = 45,
-            size = (700, 600)
+            yflip = true,      
+            xrotation = 45,     
+            
+            size = (800, 600),   
+            left_margin = 20mm,  
+            bottom_margin = 20mm,
+            right_margin = 10mm
         )
         
+        # Ahora sí funcionará porque annotations es un Vector
         annotate!(annotations)
+        
         display(p)
     end
 end

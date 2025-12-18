@@ -16,7 +16,8 @@ using Printf           # Formateo avanzado de strings y salida por pantalla
 
 # Importación de herramientas de visualización
 using PrettyTables                     # Mostrar tablas formateadas en consola y notebooks
-using Plots                            # Librería base para generación de gráficas
+using Plots
+using Plots.PlotMeasures                            # Librería base para generación de gráficas
 using TSne: tsne                       # Implementación del algoritmo t-SNE para reducción dimensional
 using ManifoldLearning                 # Métodos de aprendizaje de variedades (LLE, Isomap, etc.)
 gr()                                  # Selección del backend GR para Plots (rápido y ligero)
