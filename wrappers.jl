@@ -20,7 +20,8 @@ function MMI.transform(model::MyMinMaxScaler, cache, X)
     # Evita división por cero si max == min (columna constante)
     ranges = cache.maxs .- cache.mins
     ranges[ranges .== 0] .= 1.0 
-    return MMI.table((Xmat .- cache.mins') ./ ranges')
+    X_scaled = (Xmat .- cache.mins') ./ ranges'
+    return MMI.table(Float64.(X_scaled))
 end
 
 
