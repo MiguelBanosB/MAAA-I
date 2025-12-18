@@ -1,67 +1,69 @@
-# Este archivo se encarga de cargar librerías, constantes y modelos.
+# Carga de paquetes, constantes y definición de modelos
+
+# Importación de herramientas básicas de datos y cálculo
+using CSV              # Lectura y escritura de archivos CSV
+using DataFrames       # Manipulación y análisis de datos tabulares
+using Glob             # Búsqueda de archivos y rutas mediante patrones
+using Statistics       # Funciones estadísticas básicas (media, varianza, etc.)
+using StatsBase        # Estadística avanzada y utilidades (muestreo, pesos, métricas)
+using Random           # Generación y control de números aleatorios y semillas
+using LinearAlgebra    # Operaciones algebraicas y matriciales
+using JLD2             # Guardado y carga eficiente de datos en formato binario Julia
+using HypothesisTests  # Contrastes de hipótesis estadísticas (t-test, Wilcoxon, etc.)
+using StatsPlots       # Visualización estadística integrada con Plots.jl
+using Printf           # Formateo avanzado de strings y salida por pantalla
 
 
-# --- 1. Herramientas de Datos y Estadística ---
-using CSV               # Lectura de datasets
-using DataFrames        # Manipulación de tablas de datos
-using Glob              # Búsqueda de archivos (para cargar los sujetos)
-using Statistics        # Funciones base (mean, std, cor)
-using StatsBase         # Funciones estadísticas extra
-using Random            # Control de aleatoriedad (semillas)
-using LinearAlgebra     # Operaciones matriciales (necesario para RFE)
-using JLD2              # Persistencia de datos (guardar/cargar variables preprocesadas)
-using PrettyTables      # Visualización estética de tablas en consola
-using Plots
-gr()
-using TSne: tsne         # Para t-SNE
-using ManifoldLearning   # Para Isomap y LLE
+# Importación de herramientas de visualización
+using PrettyTables                     # Mostrar tablas formateadas en consola y notebooks
+using Plots                            # Librería base para generación de gráficas
+using TSne: tsne                       # Implementación del algoritmo t-SNE para reducción dimensional
+using ManifoldLearning                 # Métodos de aprendizaje de variedades (LLE, Isomap, etc.)
+gr()                                  # Selección del backend GR para Plots (rápido y ligero)
 
-# --- 2. Núcleo MLJ  ---
-using MLJ               # Framework principal
-using MLJBase           # Funcionalidades base de MLJ
-import MLJModelInterface as MMI # Para crear Wrappers personalizados (Filtros)
+# Importación del núcleo del framework de Machine Learning
+using MLJ                              # Framework unificado de machine learning en Julia
+using MLJBase                          # Funcionalidades base de MLJ (evaluación, medidas, utilidades)
+import MLJModelInterface as MMI        # Interfaz para definir modelos compatibles con MLJ
 
-
-# --- 3. Librerías de Algoritmos Específicos ---
-import MultivariateStats      # Proyecciones: PCA, ICA, LDA
-import NearestNeighborModels  # KNN
-import LIBSVM                 # SVM (Support Vector Machines)
-import MLJLinearModels        # Modelos lineales (Logistic Regression para RFE)
-import DecisionTree           # Random Forest y Árboles de decisión
-import EvoTrees               # Gradient Boosting (EvoTrees)
-using Flux                    # Framework de Redes Neuronales
-import MLJFlux                # Interfaz de MLJ para Flux
-import MLJScikitLearnInterface # Puente con ScikitLearn (Python) para AdaBoost
-using XGBoost
-using MLJXGBoostInterface
-
-# --- 4. Constantes Globales ---
-const SEED = 104              # Semilla fijada por enunciado para reproducibilidad
-const DATA_PATH = "Datos Práctica" # Directorio de los datos crudos
-const N_FEATURES = 561        # Número fijo de atributos del dataset HAR
+# Importación de backends y librerías de algoritmos
+import MultivariateStats               # Algoritmos estadísticos y de reducción dimensional (PCA, etc.)
+import NearestNeighborModels           # Modelos basados en vecinos más cercanos (k-NN)
+import LIBSVM                          # Máquinas de Vectores de Soporte (SVM)
+import MLJLinearModels                 # Modelos lineales (logística, regresión, etc.)
+import DecisionTree                    # Árboles de decisión y Random Forest
+import EvoTrees                        # Gradient Boosting basado en árboles
+import LightGBM                        # Implementación eficiente de Gradient Boosting (LightGBM)
+using XGBoost                          # Algoritmo XGBoost para clasificación y regresión
+using Flux                             # Framework de deep learning en Julia
+import MLJFlux                         # Integración de modelos Flux dentro del framework MLJ
+import MLJScikitLearnInterface         # Acceso a modelos de scikit-learn desde MLJ
 
 
-# --- 5. Carga de Modelos ---
+# Definición de constantes del proyecto
+const SEED = 104
+const DATA_PATH = "Datos Práctica"
+const N_FEATURES = 561
+
+# Carga de modelos lineales y basados en distancias
 LogisticClassifier      = MLJ.@load LogisticClassifier pkg=MLJLinearModels verbosity=0
 ProbabilisticSVC        = MLJ.@load ProbabilisticSVC pkg=LIBSVM verbosity=0
 KNNClassifier           = MLJ.@load KNNClassifier pkg=NearestNeighborModels verbosity=0
-NeuralNetworkClassifier = MLJ.@load NeuralNetworkClassifier pkg=MLJFlux verbosity=0
 
+# Carga de modelos basados en árboles y ensembles
 DecisionTreeClassifier  = MLJ.@load DecisionTreeClassifier pkg=DecisionTree verbosity=0
 RandomForestClassifier  = MLJ.@load RandomForestClassifier pkg=DecisionTree verbosity=0
-EvoTreeClassifier       = MLJ.@load EvoTreeClassifier pkg=EvoTrees verbosity=0
 AdaBoostStumpClassifier = MLJ.@load AdaBoostStumpClassifier pkg=DecisionTree verbosity=0
+EvoTreeClassifier       = MLJ.@load EvoTreeClassifier pkg=EvoTrees verbosity=0
+XGBoostClassifier       = MLJ.@load XGBoostClassifier pkg=XGBoost verbosity=0
+LGBMClassifier          = MLJ.@load LGBMClassifier pkg=LightGBM verbosity=0
 
-# Modelos vía ScikitLearn (Python)
-SKSGDClassifier         = MLJ.@load SGDClassifier pkg=MLJScikitLearnInterface verbosity=0
+# Carga de modelos de redes neuronales
+NeuralNetworkClassifier = MLJ.@load NeuralNetworkClassifier pkg=MLJFlux verbosity=0
 
-# Paquetes de Boosting 
-XGBoostClassifier = MLJ.@load XGBoostClassifier pkg=XGBoost verbosity=0
-LGBMClassifier    = MLJ.@load LGBMClassifier pkg=LightGBM verbosity=0
-
-# Transformaciones de Reducción de Dimensionalidad
+# Carga de algoritmos de reducción de dimensionalidad
 PCA = MLJ.@load PCA pkg=MultivariateStats verbosity=0
 ICA = MLJ.@load ICA pkg=MultivariateStats verbosity=0
 LDA = MLJ.@load LDA pkg=MultivariateStats verbosity=0
 
-println("Entorno cargado correctamente. Constantes: SEED=$SEED, N_FEATURES=$N_FEATURES")
+println("Entorno cargado correctamente")

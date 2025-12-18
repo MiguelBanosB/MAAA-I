@@ -145,7 +145,7 @@ function show_cm(dic_matrices; classes=levels(y_trainval))
         annotations = [(j, i, text(string(Int(matriz[i, j])), 
                         8, :black, :center)) 
                         for i in 1:size(matriz, 1) for j in 1:size(matriz, 2)]
-        titulo = "Confusion Matrix (Conteo):\n$nombre_modelo"
+        titulo = "Confusion Matrix:\n$nombre_modelo"
     
         # Pintar
         p = heatmap(
@@ -277,12 +277,9 @@ end
 
 
 function calculate_separability(X_2d, y)
+    global_mean = mean(X_2d, dims=1)  # Centroide global
     
-    # Centroide global
-    global_mean = mean(X_2d, dims=1)
-    
-    # Dispersión entre clases (Between-class scatter)
-    Sb = 0.0
+    Sb = 0.0  # Dispersión entre clases
     activities = unique(y)
     
     for activity in activities
@@ -295,7 +292,7 @@ function calculate_separability(X_2d, y)
         Sb += n_class * sum(diff .^ 2)
     end
     
-    # Dispersión dentro de clases (Within-class scatter)
+    # Dispersión dentro de clases
     Sw = 0.0
     
     for activity in activities
@@ -309,6 +306,5 @@ function calculate_separability(X_2d, y)
         end
     end
     
-    # Ratio de separabilidad
-    return Sb / (Sw + 1e-10)
+    return Sb / (Sw + 1e-10)  # Ratio de separabilidad
 end
