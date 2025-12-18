@@ -30,8 +30,8 @@ import EvoTrees               # Gradient Boosting (EvoTrees)
 using Flux                    # Framework de Redes Neuronales
 import MLJFlux                # Interfaz de MLJ para Flux
 import MLJScikitLearnInterface # Puente con ScikitLearn (Python) para AdaBoost
-
-import CondaPkg
+using XGBoost
+using MLJXGBoostInterface
 
 # --- 4. Constantes Globales ---
 const SEED = 104              # Semilla fijada por enunciado para reproducibilidad
@@ -56,7 +56,6 @@ SKSGDClassifier         = MLJ.@load SGDClassifier pkg=MLJScikitLearnInterface ve
 # Paquetes de Boosting 
 XGBoostClassifier = MLJ.@load XGBoostClassifier pkg=XGBoost verbosity=0
 LGBMClassifier    = MLJ.@load LGBMClassifier pkg=LightGBM verbosity=0
-CatBoostClassifier = MLJ.@load CatBoostClassifier pkg=CatBoost verbosity=0
 
 # Transformaciones de Reducción de Dimensionalidad
 PCA = MLJ.@load PCA pkg=MultivariateStats verbosity=0
