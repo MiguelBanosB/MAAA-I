@@ -398,7 +398,5 @@ function MMI.transform(model::MyLLE, cache, X)
     return MMI.table(X_embedded)
 end
 
-
-
-MMI.input_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.ScientificTypes.Continuous)
-MMI.output_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.ScientificTypes.Continuous)
+MMI.input_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.Continuous)
+MMI.output_scitype(::Type{<:MyLLE}) = MMI.Table(MMI.Continuous)
