@@ -327,5 +327,7 @@ function MLJBase.predict(m::HardVotingClassifier, fitresult, X_new)
 end
 
 # Traits
-MLJBase.input_scitype(::Type{<:HardVotingClassifier}) = MLJBase.Table(MLJBase.Continuous)
-MLJBase.target_scitype(::Type{<:HardVotingClassifier}) = AbstractVector{<:Finite}
+MLJBase.input_scitype(::Type{<:PersonalizedPipeline})  = MLJBase.Table(MLJBase.Continuous)
+MLJBase.target_scitype(::Type{<:PersonalizedPipeline}) = AbstractVector{<:Finite}
+MLJBase.is_pure_julia(::Type{<:PersonalizedPipeline})  = true
+MLJBase.supports_weights(::Type{<:PersonalizedPipeline}) = false
