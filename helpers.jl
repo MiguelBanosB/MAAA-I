@@ -196,3 +196,36 @@ function get_better(tipo_modelo::String, csv_path::String, metric=:B_Accuracy_me
     
     return pipe
 end
+
+# --- 6. Función de graficado ---
+function plot_feature_importance(importancias_pairs, model_name; top_n=15)
+    # Convertimos el Vector de Pares (Feature => Valor) a Vectores separados
+    features = string.(first.(importancias_pairs))
+    values   = last.(importancias_pairs)
+    
+    # Creamos DataFrame y ordenamos
+    df = DataFrame(Feature=features, Importance=values)
+    sort!(df, :Importance, rev=true) # Mayor importancia primero
+    
+    # Seleccionamos TOP N
+    df_plot = first(df, top_n)
+    
+    # Reordenamos para el gráfico
+    sort!(df_plot, :Importance) 
+    
+    # Generamos el gráfico
+    p = bar(
+        df_plot.Feature, 
+        df_plot.Importance, 
+        orientation=:h, 
+        title="Top $top_n Variables más Importantes ($model_name)",
+        label=nothing,
+        color=:steelblue,
+        xlabel="Importancia Relativa",
+        yticks=(1:top_n, df_plot.Feature),
+        size=(900, 600),     # Tamaño grande para leer bien las etiquetas
+        margin=10Plots.mm,   # Margen para que no se corte el texto
+        yguidefontsize=8
+    )
+    return p
+end
