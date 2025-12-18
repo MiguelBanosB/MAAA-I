@@ -277,3 +277,55 @@ function MLJBase.prefit(model::PersonalizedPipeline, verbosity, X, y)
 
     return (predict=yhat,)
 end
+
+# ==============================================================================
+# 5. WRAPPER DE HARD VOTING
+# ==============================================================================
+mutable struct HardVotingClassifier <: MLJBase.Deterministic
+    base_model::MLJBase.Probabilistic
+    n_partitions::Int
+    rng::Int
+end
+
+# Constructor externo
+HardVotingClassifier(; base_model=ProbabilisticSVC(cost=0.5), n_partitions=3, rng=104) = HardVotingClassifier(base_model, n_partitions, rng)
+
+function MLJBase.fit(m::HardVotingClassifier, verbosity::Int, X, y)
+    rng = Random.MersenneTwister(m.rng)
+    trained_models = Any[]
+    
+    n_rows = length(y)
+    
+    # Bucle de Bagging
+    for i in 1:m.n_partitions
+        indices = rand(rng, 1:n_rows, n_rows) # Bootstrapping
+        
+        X_subset = selectrows(X, indices)
+        y_subset = selectrows(y, indices)
+        
+        mach = machine(m.base_model, X_subset, y_subset)
+        fit!(mach, verbosity=0)
+        
+        push!(trained_models, mach)
+    end
+    
+    return trained_models, nothing, nothing
+end
+
+function MLJBase.predict(m::HardVotingClassifier, fitresult, X_new)
+    trained_models = fitresult
+
+    # Cada modelo vota su etiqueta favorita (predict_mode)
+    all_votes = [MLJ.predict_mode(mach, X_new) for mach in trained_models]
+    
+    votes_matrix = hcat(all_votes...)
+    
+    # Calculamos la moda
+    final_predictions = [mode(row) for row in eachrow(votes_matrix)]
+    
+    return final_predictions
+end
+
+# Traits
+MLJBase.input_scitype(::Type{<:HardVotingClassifier}) = MLJBase.Table(MLJBase.Continuous)
+MLJBase.target_scitype(::Type{<:HardVotingClassifier}) = AbstractVector{<:Finite}
