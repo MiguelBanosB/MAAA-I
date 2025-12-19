@@ -14,7 +14,7 @@ using Printf
 # Herramientas de análisis estadístico
 using HypothesisTests
 using Combinatorics # Para generar pares de modelos
-using Distributions  # Necesario para calcular el p-valor (Chisq)
+using Distributions  # Necesario para calcular el p-valor
 
 # Herramientas de visualización
 using PrettyTables
