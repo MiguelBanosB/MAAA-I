@@ -1,45 +1,50 @@
 # Carga de paquetes, constantes y definición de modelos
 
-# Importación de herramientas básicas de datos y cálculo
-using CSV              # Lectura y escritura de archivos CSV
-using DataFrames       # Manipulación y análisis de datos tabulares
-using Glob             # Búsqueda de archivos y rutas mediante patrones
-using Statistics       # Funciones estadísticas básicas (media, varianza, etc.)
-using StatsBase        # Estadística avanzada y utilidades (muestreo, pesos, métricas)
-using Random           # Generación y control de números aleatorios y semillas
-using LinearAlgebra    # Operaciones algebraicas y matriciales
-using JLD2             # Guardado y carga eficiente de datos en formato binario Julia
-using HypothesisTests  # Contrastes de hipótesis estadísticas (t-test, Wilcoxon, etc.)
-using StatsPlots       # Visualización estadística integrada con Plots.jl
-using Printf           # Formateo avanzado de strings y salida por pantalla
+# Herramientas básicas de manipulación de datos y cálculo
+using CSV
+using DataFrames
+using Glob
+using Statistics
+using StatsBase
+using Random
+using LinearAlgebra
+using JLD2
+using Printf
 
+# Herramientas de análisis estadístico
+using HypothesisTests
+using Combinatorics # Para generar pares de modelos
+using Distributions  # Necesario para calcular el p-valor (Chisq)
 
-# Importación de herramientas de visualización
-using PrettyTables                     # Mostrar tablas formateadas en consola y notebooks
+# Herramientas de visualización
+using PrettyTables
 using Plots
-using Plots.PlotMeasures                            # Librería base para generación de gráficas
-using TSne: tsne                       # Implementación del algoritmo t-SNE para reducción dimensional
-using ManifoldLearning                 # Métodos de aprendizaje de variedades (LLE, Isomap, etc.)
-gr()                                  # Selección del backend GR para Plots (rápido y ligero)
+using Plots.PlotMeasures
+using StatsPlots
+using TSne
+using ManifoldLearning
 
-# Importación del núcleo del framework de Machine Learning
-using MLJ                              # Framework unificado de machine learning en Julia
-using MLJBase                          # Funcionalidades base de MLJ (evaluación, medidas, utilidades)
-import MLJModelInterface as MMI        # Interfaz para definir modelos compatibles con MLJ
+# Configuración del backend de gráficos
+gr()
 
-# Importación de backends y librerías de algoritmos
-import MultivariateStats               # Algoritmos estadísticos y de reducción dimensional (PCA, etc.)
-import NearestNeighborModels           # Modelos basados en vecinos más cercanos (k-NN)
-import LIBSVM                          # Máquinas de Vectores de Soporte (SVM)
-import MLJLinearModels                 # Modelos lineales (logística, regresión, etc.)
-import DecisionTree                    # Árboles de decisión y Random Forest
-import EvoTrees                        # Gradient Boosting basado en árboles
-import LightGBM                        # Implementación eficiente de Gradient Boosting (LightGBM)
-using XGBoost                          # Algoritmo XGBoost para clasificación y regresión
-using Flux                             # Framework de deep learning en Julia
-import MLJFlux                         # Integración de modelos Flux dentro del framework MLJ
-import MLJScikitLearnInterface         # Acceso a modelos de scikit-learn desde MLJ
+# Núcleo del framework de Machine Learning
+using MLJ
+using MLJBase
+import MLJModelInterface as MMI
 
+# Backends y librerías de algoritmos
+import MultivariateStats
+import NearestNeighborModels
+import LIBSVM
+import MLJLinearModels
+import DecisionTree
+import EvoTrees
+import LightGBM
+import XGBoost
+
+# Librerías para Redes Neuronales
+using Flux
+import MLJFlux
 
 # Definición de constantes del proyecto
 const SEED = 104
@@ -67,4 +72,4 @@ PCA = MLJ.@load PCA pkg=MultivariateStats verbosity=0
 ICA = MLJ.@load ICA pkg=MultivariateStats verbosity=0
 LDA = MLJ.@load LDA pkg=MultivariateStats verbosity=0
 
-println("Entorno cargado correctamente")
+println("Entorno y modelos cargados correctamente")
